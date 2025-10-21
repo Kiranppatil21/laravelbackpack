@@ -17,6 +17,19 @@ Route::group([
     'namespace' => 'App\Http\Controllers\Admin',
 ], function () { // custom admin routes
     Route::crud('user', 'UserCrudController');
+    // Role & Permission CRUD (protected by Super Admin role)
+    Route::group(['middleware' => ['role:Super Admin']], function () {
+        Route::crud('role', 'RoleCrudController');
+        Route::crud('permission', 'PermissionCrudController');
+    });
+
+    // AJAX helpers for inline permission creation/search used by select2_from_ajax
+    // These are protected by the roles configured in config/backpack-permissions.php
+    $ajaxRoles = implode('|', config('backpack-permissions.sidebar_allowed_roles', ['Super Admin']));
+    Route::group(['middleware' => ['role:'.$ajaxRoles]], function () {
+        Route::post('permission/ajax-create', 'PermissionCrudController@ajaxCreate')->name('permission.ajax.create');
+        Route::get('permission/ajax-search', 'PermissionCrudController@ajaxSearch')->name('permission.ajax.search');
+    });
 }); // this should be the absolute last line of this file
 
 /**
