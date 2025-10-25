@@ -9,8 +9,10 @@
         "php": "^8.2",
         "backpack/crud": "^6.8",
         "backpack/theme-tabler": "^1.2",
+        "laravel/cashier": "^16.0",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
+        "razorpay/razorpay": "^2.9",
         "spatie/laravel-permission": "*",
         "stancl/tenancy": "^3.9"
     },

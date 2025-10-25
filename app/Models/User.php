@@ -37,15 +37,25 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * The attributes that should be cast.
      *
-     * @return array<string, string>
+     * @var array<string,string>
      */
-    protected function casts(): array
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
+
+    /**
+     * Ensure password is only set when provided and hashed.
+     */
+    public function setPasswordAttribute($value)
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        if (! is_null($value) && $value !== '') {
+            // Let Laravel's 'hashed' cast handle hashing if available, but ensure raw values are hashed
+            $this->attributes['password'] = \Illuminate\Support\Str::startsWith($value, '$2y$')
+                ? $value
+                : bcrypt($value);
+        }
     }
 }
