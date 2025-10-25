@@ -2,9 +2,8 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
-use App\Models\Client;
-use App\Observers\ClientObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,9 +20,6 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Only register the observer if both the model and observer classes exist.
-        if (class_exists(\App\Models\Client::class) && class_exists(\App\Observers\ClientObserver::class)) {
-            \App\Models\Client::observe(\App\Observers\ClientObserver::class);
-        }
+        Vite::prefetch(concurrency: 3);
     }
 }

@@ -2,3 +2,9 @@
 <li class="nav-item"><a class="nav-link" href="{{ backpack_url('dashboard') }}"><i class="la la-home nav-icon"></i> {{ trans('backpack::base.dashboard') }}</a></li>
 
 <x-backpack::menu-item title="Users" icon="la la-question" :link="backpack_url('user')" />
+<x-backpack::menu-item title="Agencies" icon="la la-question" :link="backpack_url('agency')" />
+<x-backpack::menu-item title="Clients" icon="la la-question" :link="backpack_url('client')" />
+<x-backpack::menu-item title="Employees" icon="la la-question" :link="backpack_url('employee')" />
+<x-backpack::menu-item title="Attendances" icon="la la-question" :link="backpack_url('attendance')" />
+<x-backpack::menu-item title="Payrolls" icon="la la-question" :link="backpack_url('payroll')" />
+<x-backpack::menu-item title="Invoices" icon="la la-question" :link="backpack_url('invoice')" />
