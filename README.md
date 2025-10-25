@@ -60,3 +60,41 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Phase 1 — Project setup & ERD (status)
+
+This repository implements the backend foundations for the Phase 1 plan. Below is a short checklist and current status.
+
+- Laravel 12 backend: Present (see `composer.json`).
+- React frontend: Not scaffolded yet — not present in `package.json`.
+- Database migrations: Present for Agencies, Clients, Employees, Attendance, Payroll, Invoices (see `database/migrations` and `database/migrations/tenant`).
+- Auth scaffolding (Breeze/Jetstream): Not installed (you can install Breeze to scaffold a React frontend with auth).
+- Tailwind: Present in `package.json` devDependencies.
+- Roles: Spatie permission included; `RoleSeeder` seeds `Super Admin` and `Agency Owner` plus additional roles (HR, Client, Guard/Employee, Visitor, Police).
+
+Simple ERD (text-based)
+
+Tenants/Central vs Tenant DBs
+
+Central DB tables:
+- tenants (id)
+- tenant_subscriptions (tenant_id)
+- razorpay_payments
+
+Tenant DB (per-tenant) tables (examples):
+- agencies (id)
+- clients (id, agency_id)
+- employees (id, agency_id)
+- attendance (employee_id)
+- payrolls (employee_id)
+- invoices (client_id)
+
+Relationships (high level):
+- Agency 1---* Client
+- Agency 1---* Employee
+- Employee 1---* Attendance
+- Employee 1---* Payroll
+- Client 1---* Invoice
+- Tenant 1---* TenantSubscription
+
+If you want, I can add a visual ERD (SVG/PNG) under `docs/erd.png` or generate a dbdiagram.io link.
