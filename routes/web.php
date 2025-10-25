@@ -1,22 +1,27 @@
 <?php
 
+use App\Http\Controllers\ProfileController;
+use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
-use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as Backpack;
+use Inertia\Inertia;
 
 Route::get('/', function () {
-    return view('welcome');
+    return Inertia::render('Welcome', [
+        'canLogin' => Route::has('login'),
+        'canRegister' => Route::has('register'),
+        'laravelVersion' => Application::VERSION,
+        'phpVersion' => PHP_VERSION,
+    ]);
 });
- 
- // The admin route group has been removed as Backpack routes are defined in routes/backpack/custom.php
 
-// Stripe webhook endpoint (receives events from Stripe and updates tenant/subscription status)
-Route::post('stripe/webhook', [\App\Http\Controllers\Admin\BillingController::class, 'webhook']);
+Route::get('/dashboard', function () {
+    return Inertia::render('Dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
 
-// Public signup and checkout
-Route::get('signup', [\App\Http\Controllers\SignupController::class, 'show'])->name('signup.show');
-Route::post('signup', [\App\Http\Controllers\SignupController::class, 'store'])->name('signup.store');
-Route::get('signup/success', [\App\Http\Controllers\SignupController::class, 'success'])->name('signup.success');
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
 
-// Razorpay webhook endpoint
-Route::post('razorpay/webhook', [\App\Http\Controllers\RazorpayController::class, 'webhook']);
-
+require __DIR__.'/auth.php';
