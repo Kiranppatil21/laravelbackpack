@@ -54,20 +54,44 @@ class ProcessRazorpayPayment implements ShouldQueue
         // try to fetch tenant id from order receipt if not present
         // prefer an app container binding (useful in tests where a fake is bound),
         // fall back to checking the real SDK class
-        if (! $tenantId && $payment->order_id && (app()->bound('Razorpay\\Api\\Api') || app()->bound('\\Razorpay\\Api\\Api') || class_exists('Razorpay\\Api\\Api'))) {
-            try {
-                // Try to resolve the API from the container with or without a leading backslash.
+        if (! $tenantId && $payment->order_id) {
+            // Prefer container-bound fake (useful in tests). Try several common keys.
+            $api = null;
+            $boundKeys = ['Razorpay\\Api\\Api', '\\Razorpay\\Api\\Api', 'razorpay.api', 'razorpay'];
+            foreach ($boundKeys as $key) {
                 try {
-                    $api = app()->make('Razorpay\\Api\\Api');
+                    if (app()->bound($key)) {
+                        $api = app()->make($key);
+                        break;
+                    }
                 } catch (\Throwable $t) {
-                    // fallback to a container binding with a leading backslash if present
-                    $api = app()->make('\\Razorpay\\Api\\Api');
+                    // ignore and continue
                 }
+            }
 
-                $order = $api->order->fetch($payment->order_id);
-                $tenantId = $order['receipt'] ?? null;
-            } catch (\Exception $e) {
-                Log::error('Failed to fetch order in ProcessRazorpayPayment: ' . $e->getMessage());
+            // If no container binding, and the class exists, instantiate with env keys if available.
+            if (! $api && class_exists('Razorpay\\Api\\Api')) {
+                try {
+                    $keyId = env('RAZORPAY_KEY_ID');
+                    $keySecret = env('RAZORPAY_KEY_SECRET');
+                    if ($keyId && $keySecret) {
+                        $api = new \Razorpay\Api\Api($keyId, $keySecret);
+                    } else {
+                        // Last resort: attempt to instantiate without args (some tests may bind a fake via class name)
+                        $api = app()->make('Razorpay\\Api\\Api');
+                    }
+                } catch (\Throwable $t) {
+                    Log::error('Failed to instantiate Razorpay Api in ProcessRazorpayPayment: ' . $t->getMessage());
+                }
+            }
+
+            if ($api) {
+                try {
+                    $order = $api->order->fetch($payment->order_id);
+                    $tenantId = is_array($order) ? ($order['receipt'] ?? null) : ($order->receipt ?? null);
+                } catch (\Exception $e) {
+                    Log::error('Failed to fetch order in ProcessRazorpayPayment: ' . $e->getMessage());
+                }
             }
         }
 
