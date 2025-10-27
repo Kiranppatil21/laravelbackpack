@@ -49,6 +49,39 @@ We would like to extend our thanks to the following sponsors for funding Laravel
 
 Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
 
+Developer notes — testing billing flows locally
+------------------------------------------------
+If you want to run the end-to-end signup → billing → webhook activation flow locally (without calling real Razorpay/Stripe), you can bind fakes into the container.
+
+Example: bind a fake Razorpay SDK in a test or `php artisan tinker`:
+
+```php
+// in a test
+$fake = new class {
+	public $order;
+	public function __construct()
+	{
+		$this->order = new class {
+			public function create($payload) { return ['id' => 'order_test_1', 'amount' => $payload['amount']]; }
+			public function fetch($id) { return ['id' => $id, 'receipt' => '1']; }
+		};
+	}
+};
+app()->instance('\\Razorpay\\Api\\Api', $fake);
+```
+
+For Stripe, bind a fake `\\Stripe\\StripeClient` implementation (or a minimal stub) to `Stripe\\StripeClient::class` so the signup controller and checkout creation code can run in tests.
+
+Running the end-to-end test locally:
+
+```bash
+php artisan test --filter SignupProvisioningE2ETest
+```
+
+Notes
+- `RazorpayResolver` prefers container-bound instances, so binding the SDK under `Razorpay\\Api\\Api` will be picked up by the resolver during tests.
+- In CI, ensure the appropriate env vars are set or tests bind fakes for external SDKs.
+
 ## Code of Conduct
 
 In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).

@@ -59,9 +59,15 @@ class ProcessRazorpayPayment implements ShouldQueue
         if (! $tenantId && $payment->order_id) {
             // If the job was constructed with an API instance (only for inline calls), use it.
             $api = $this->apiInstance ?? null;
-            // Otherwise use the centralized resolver service which prefers container bindings then env-based instantiation
+            // Otherwise use the centralized resolver service (resolved from container) which prefers container bindings then env-based instantiation
             if (! $api) {
-                $api = (new RazorpayResolver())->resolve();
+                try {
+                    $resolver = app()->make(\App\Services\RazorpayResolverInterface::class);
+                    $api = $resolver->resolve();
+                } catch (\Throwable $t) {
+                    // fall back to direct instantiation as last resort
+                    $api = (new RazorpayResolver())->resolve();
+                }
             }
 
             if ($api) {

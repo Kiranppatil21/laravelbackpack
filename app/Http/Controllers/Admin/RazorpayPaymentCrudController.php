@@ -6,10 +6,18 @@ use Backpack\CRUD\app\Http\Controllers\CrudController;
 use App\Models\RazorpayPayment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use App\Services\RazorpayResolverInterface;
 use Illuminate\Support\Facades\DB;
 
 class RazorpayPaymentCrudController extends CrudController
 {
+    protected RazorpayResolverInterface $razorpayResolver;
+
+    public function __construct(RazorpayResolverInterface $razorpayResolver)
+    {
+        parent::__construct();
+        $this->razorpayResolver = $razorpayResolver;
+    }
     public function setup()
     {
         $this->crud->setModel(RazorpayPayment::class);
@@ -69,8 +77,7 @@ class RazorpayPaymentCrudController extends CrudController
         $api = null;
         if (! empty($payment->order_id)) {
             try {
-                $resolver = new \App\Services\RazorpayResolver();
-                $api = $resolver->resolve();
+                $api = $this->razorpayResolver->resolve();
 
                 if ($api) {
                     $order = $api->order->fetch($payment->order_id);

@@ -6,9 +6,16 @@ use App\Http\Requests\SignupRequest;
 use Illuminate\Http\Request;
 use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\Database\Models\Domain;
+use App\Services\RazorpayResolverInterface;
 
 class SignupController extends Controller
 {
+    protected RazorpayResolverInterface $razorpayResolver;
+
+    public function __construct(RazorpayResolverInterface $razorpayResolver)
+    {
+        $this->razorpayResolver = $razorpayResolver;
+    }
     public function show()
     {
         return view('signup.form');
@@ -54,11 +61,12 @@ class SignupController extends Controller
                 $amount = isset($validated['amount']) ? (int)round($validated['amount'] * 100) : 0; // rupees to paise
                 $currency = 'INR';
 
-                if (! class_exists('\Razorpay\Api\Api')) {
-                    throw new \Exception('Razorpay PHP SDK not installed. Run: composer require razorpay/razorpay');
+                // resolve Razorpay API via resolver (container-bound fakes will be preferred in tests)
+                $api = $this->razorpayResolver->resolve();
+                if (! $api) {
+                    throw new \Exception('Razorpay PHP SDK not available or RAZORPAY keys missing. Run: composer require razorpay/razorpay and set RAZORPAY_KEY_ID/RAZORPAY_KEY_SECRET');
                 }
 
-                $api = app()->make('\Razorpay\Api\Api');
                 $order = $api->order->create([
                     'amount' => max(1, $amount),
                     'currency' => $currency,

@@ -4,7 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Log;
 
-class RazorpayResolver
+class RazorpayResolver implements RazorpayResolverInterface
 {
     /**
      * Resolve a Razorpay API instance.

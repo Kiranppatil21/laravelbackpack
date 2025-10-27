@@ -13,7 +13,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Bind the RazorpayResolver interface to the concrete implementation so it can be injected and mocked in tests
+        $this->app->singleton(\App\Services\RazorpayResolverInterface::class, function ($app) {
+            return new \App\Services\RazorpayResolver();
+        });
     }
 
     /**

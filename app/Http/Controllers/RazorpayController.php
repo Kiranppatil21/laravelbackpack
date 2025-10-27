@@ -9,9 +9,16 @@ use App\Models\RazorpayPayment;
 use App\Models\TenantSubscription;
 use Stancl\Tenancy\Database\Models\Tenant;
 use App\Jobs\ProcessRazorpayPayment;
+use App\Services\RazorpayResolverInterface;
 
 class RazorpayController extends Controller
 {
+    protected RazorpayResolverInterface $razorpayResolver;
+
+    public function __construct(RazorpayResolverInterface $razorpayResolver)
+    {
+        $this->razorpayResolver = $razorpayResolver;
+    }
     public function webhook(Request $request)
     {
         // Verify webhook signature
@@ -68,9 +75,8 @@ class RazorpayController extends Controller
                         // if dispatching fails, run inline as a fallback so webhooks still activate tenants in tests/environments without queue
                         Log::warning('Dispatch failed for ProcessRazorpayPayment, running inline: ' . $e->getMessage());
 
-                        // resolve Razorpay API instance using the centralized resolver and pass into job
-                        $resolver = new \App\Services\RazorpayResolver();
-                        $apiInstance = $resolver->resolve();
+                        // resolve Razorpay API instance using the injected resolver and pass into job
+                        $apiInstance = $this->razorpayResolver->resolve();
 
                         $job = new ProcessRazorpayPayment($payment->id, $apiInstance);
                         app()->call([$job, 'handle']);
