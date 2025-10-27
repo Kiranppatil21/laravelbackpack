@@ -67,7 +67,12 @@ class RazorpayController extends Controller
                     } catch (\Exception $e) {
                         // if dispatching fails, run inline as a fallback so webhooks still activate tenants in tests/environments without queue
                         Log::warning('Dispatch failed for ProcessRazorpayPayment, running inline: ' . $e->getMessage());
-                        $job = new ProcessRazorpayPayment($payment->id);
+
+                        // resolve Razorpay API instance using the centralized resolver and pass into job
+                        $resolver = new \App\Services\RazorpayResolver();
+                        $apiInstance = $resolver->resolve();
+
+                        $job = new ProcessRazorpayPayment($payment->id, $apiInstance);
                         app()->call([$job, 'handle']);
                     }
                 }

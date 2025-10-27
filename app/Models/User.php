@@ -60,4 +60,26 @@ class User extends Authenticatable implements MustVerifyEmail
                 : bcrypt($value);
         }
     }
+
+    /**
+     * Return an avatar URL for this user. During testing we avoid external
+     * HTTP calls and return an empty string. In normal environments, prefer
+     * Gravatar for the user's email if available.
+     */
+    public function avatar()
+    {
+        if (app()->environment('testing')) {
+            return '';
+        }
+
+        try {
+            if (class_exists('Creativeorange\\Gravatar\\Facades\\Gravatar')) {
+                return \Creativeorange\Gravatar\Facades\Gravatar::get($this->email, ['size' => 80]);
+            }
+        } catch (\Throwable $e) {
+            // fallback to empty string on any failure
+        }
+
+        return '';
+    }
 }

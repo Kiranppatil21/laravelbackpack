@@ -65,13 +65,19 @@ class RazorpayPaymentCrudController extends CrudController
 
         // determine tenant id (try fetching order to read receipt -> tenant id)
         $tenantId = $payment->tenant_id ?? null;
-        if (class_exists('Razorpay\\Api\\Api') && ! empty($payment->order_id)) {
+        // Resolve Razorpay API instance via centralized resolver if needed
+        $api = null;
+        if (! empty($payment->order_id)) {
             try {
-                $api = app()->make('Razorpay\\Api\\Api');
-                $order = $api->order->fetch($payment->order_id);
-                $receipt = is_array($order) ? ($order['receipt'] ?? null) : ($order->receipt ?? null);
-                if ($receipt) {
-                    $tenantId = $receipt;
+                $resolver = new \App\Services\RazorpayResolver();
+                $api = $resolver->resolve();
+
+                if ($api) {
+                    $order = $api->order->fetch($payment->order_id);
+                    $receipt = is_array($order) ? ($order['receipt'] ?? null) : ($order->receipt ?? null);
+                    if ($receipt) {
+                        $tenantId = $receipt;
+                    }
                 }
             } catch (\Exception $e) {
                 Log::warning('Order fetch failed during admin retry: ' . $e->getMessage());
@@ -80,7 +86,7 @@ class RazorpayPaymentCrudController extends CrudController
 
         // dispatch processing job (it will write to central DB) regardless; job is idempotent
         try {
-            $job = new \App\Jobs\ProcessRazorpayPayment($payment->id);
+            $job = new \App\Jobs\ProcessRazorpayPayment($payment->id, $api);
             // try to run the handler synchronously (useful for environments without queue workers)
             app()->call([$job, 'handle']);
             request()->session()->flash('success', 'Retry processing finished');

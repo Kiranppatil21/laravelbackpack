@@ -10,6 +10,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use App\Models\RazorpayPayment;
 use App\Models\TenantSubscription;
+use App\Services\RazorpayResolver;
 use Illuminate\Support\Facades\DB;
 
 class ProcessRazorpayPayment implements ShouldQueue
@@ -17,10 +18,11 @@ class ProcessRazorpayPayment implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $paymentId;
-
-    public function __construct($paymentId)
+    protected $apiInstance;
+    public function __construct($paymentId, $apiInstance = null)
     {
         $this->paymentId = $paymentId;
+        $this->apiInstance = $apiInstance;
     }
 
     public function handle()
@@ -52,37 +54,14 @@ class ProcessRazorpayPayment implements ShouldQueue
         $tenantId = $payment->tenant_id;
 
         // try to fetch tenant id from order receipt if not present
-        // prefer an app container binding (useful in tests where a fake is bound),
-        // fall back to checking the real SDK class
+        // prefer an explicitly provided API instance, then a container binding
+        // (useful in tests where a fake is bound), then fall back to the real SDK class
         if (! $tenantId && $payment->order_id) {
-            // Prefer container-bound fake (useful in tests). Try several common keys.
-            $api = null;
-            $boundKeys = ['Razorpay\\Api\\Api', '\\Razorpay\\Api\\Api', 'razorpay.api', 'razorpay'];
-            foreach ($boundKeys as $key) {
-                try {
-                    if (app()->bound($key)) {
-                        $api = app()->make($key);
-                        break;
-                    }
-                } catch (\Throwable $t) {
-                    // ignore and continue
-                }
-            }
-
-            // If no container binding, and the class exists, instantiate with env keys if available.
-            if (! $api && class_exists('Razorpay\\Api\\Api')) {
-                try {
-                    $keyId = env('RAZORPAY_KEY_ID');
-                    $keySecret = env('RAZORPAY_KEY_SECRET');
-                    if ($keyId && $keySecret) {
-                        $api = new \Razorpay\Api\Api($keyId, $keySecret);
-                    } else {
-                        // Last resort: attempt to instantiate without args (some tests may bind a fake via class name)
-                        $api = app()->make('Razorpay\\Api\\Api');
-                    }
-                } catch (\Throwable $t) {
-                    Log::error('Failed to instantiate Razorpay Api in ProcessRazorpayPayment: ' . $t->getMessage());
-                }
+            // If the job was constructed with an API instance (only for inline calls), use it.
+            $api = $this->apiInstance ?? null;
+            // Otherwise use the centralized resolver service which prefers container bindings then env-based instantiation
+            if (! $api) {
+                $api = (new RazorpayResolver())->resolve();
             }
 
             if ($api) {
