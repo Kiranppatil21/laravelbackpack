@@ -51,3 +51,5 @@ Notes
 This PR purposely avoids editing vendor code. Tests stub SDKs by binding `Razorpay\Api\Api` into the container. The `RazorpayResolver` prefers container bindings so tests can inject fakes.
 
 If you want, I can open the PR on GitHub for you (I can prepare the GH UI text). Automatic opening requires the GitHub CLI or a token.
+
+Local test status: All tests passed locally at the time of this PR draft (48 passed, 0 failed).
