@@ -2,10 +2,10 @@
 
 namespace Tests\Unit;
 
-use Tests\TestCase;
+use App\Models\TenantSubscription;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Stancl\Tenancy\Database\Models\Tenant;
-use App\Models\TenantSubscription;
+use Tests\TestCase;
 
 class BillingWebhookTest extends TestCase
 {
@@ -79,8 +79,8 @@ class BillingWebhookTest extends TestCase
                     'customer' => 'cus_new',
                     'items' => [
                         'data' => [
-                            ['price' => ['id' => 'price_gold']]
-                        ]
+                            ['price' => ['id' => 'price_gold']],
+                        ],
                     ],
                 ],
             ],

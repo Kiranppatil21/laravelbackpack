@@ -16,8 +16,6 @@ class AllowRole
      * Handle an incoming request.
      * Simply pass-through to the next middleware.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
      * @param  string|null  $role
      * @return mixed
      */

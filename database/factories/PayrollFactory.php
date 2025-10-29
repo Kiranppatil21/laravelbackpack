@@ -27,7 +27,7 @@ class PayrollFactory extends Factory
             'gross' => $gross,
             'tax' => $tax,
             'net' => $net,
-            'status' => $this->faker->randomElement(['paid','pending']),
+            'status' => $this->faker->randomElement(['paid', 'pending']),
             'paid_at' => $this->faker->optional(0.6)->dateTimeBetween($start, $end),
             'created_at' => now(),
             'updated_at' => now(),

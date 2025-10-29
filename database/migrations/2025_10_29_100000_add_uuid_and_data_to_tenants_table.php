@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 return new class extends Migration
@@ -14,8 +14,6 @@ return new class extends Migration
      * We'll add a nullable `uuid` string and a nullable `data` json column.
      * Existing tenants will be backfilled with UUID v4 values. This is
      * intentionally non-destructive: the integer primary `id` remains.
-     *
-     * @return void
      */
     public function up(): void
     {
@@ -47,8 +45,6 @@ return new class extends Migration
 
     /**
      * Reverse the migrations.
-     *
-     * @return void
      */
     public function down(): void
     {

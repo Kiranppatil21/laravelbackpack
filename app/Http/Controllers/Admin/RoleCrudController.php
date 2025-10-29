@@ -2,23 +2,23 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Backpack\CRUD\app\Http\Controllers\CrudController;
-use Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
-use Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
-use Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
-use Backpack\CRUD\app\Http\Controllers\Operations\DeleteOperation;
-use Backpack\CRUD\app\Http\Controllers\Operations\ShowOperation;
 use App\Http\Requests\RoleRequest;
-use Spatie\Permission\Models\Role;
+use Backpack\CRUD\app\Http\Controllers\CrudController;
+use Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
+use Backpack\CRUD\app\Http\Controllers\Operations\DeleteOperation;
+use Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
+use Backpack\CRUD\app\Http\Controllers\Operations\ShowOperation;
+use Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
+use Spatie\Permission\Models\Role;
 
 class RoleCrudController extends CrudController
 {
-    use ListOperation;
     use CreateOperation;
-    use UpdateOperation;
     use DeleteOperation;
+    use ListOperation;
     use ShowOperation;
+    use UpdateOperation;
 
     public function setup(): void
     {
@@ -38,7 +38,7 @@ class RoleCrudController extends CrudController
             'label' => 'Permissions',
             'entity' => 'permissions',
             'attribute' => 'name',
-            'model' => "Spatie\\Permission\\Models\\Permission",
+            'model' => 'Spatie\\Permission\\Models\\Permission',
         ]);
     }
 
@@ -55,7 +55,7 @@ class RoleCrudController extends CrudController
             'name' => 'permissions', // relationship name on the Role model
             'entity' => 'permissions',
             'attribute' => 'name',
-            'model' => "Spatie\\Permission\\Models\\Permission",
+            'model' => 'Spatie\\Permission\\Models\\Permission',
             'pivot' => true,
             'data_source' => url(config('backpack.base.route_prefix', 'admin').'/permission/ajax-search'),
             'placeholder' => 'Search or create permissions',
@@ -76,6 +76,7 @@ class RoleCrudController extends CrudController
 
         $this->data['entry']->syncPermissions(request()->input('permissions', []));
         $this->syncPermissionsFromRequest($this->data['entry']);
+
         return $response;
     }
 
@@ -85,9 +86,10 @@ class RoleCrudController extends CrudController
 
         $this->data['entry']->syncPermissions(request()->input('permissions', []));
         $this->syncPermissionsFromRequest($this->data['entry']);
+
         return $response;
     }
-    
+
     /**
      * Helper to accept an array of permission ids or names, create missing permissions,
      * and sync them on the role.
@@ -96,7 +98,7 @@ class RoleCrudController extends CrudController
     {
         $input = request()->input('permissions', []);
 
-        if (!is_array($input)) {
+        if (! is_array($input)) {
             $input = [$input];
         }
 
@@ -105,6 +107,7 @@ class RoleCrudController extends CrudController
         foreach ($input as $item) {
             if (is_numeric($item)) {
                 $permissionIds[] = (int) $item;
+
                 continue;
             }
 

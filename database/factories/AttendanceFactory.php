@@ -19,9 +19,9 @@ class AttendanceFactory extends Factory
             // create an employee automatically and associate
             'employee_id' => Employee::factory(),
             'date' => $date,
-            'status' => $this->faker->randomElement(['present','absent','leave']),
-            'check_in' => $this->faker->optional(0.9)->dateTimeBetween($date . ' 07:00', $date . ' 10:00'),
-            'check_out' => $this->faker->optional(0.8)->dateTimeBetween($date . ' 15:00', $date . ' 19:00'),
+            'status' => $this->faker->randomElement(['present', 'absent', 'leave']),
+            'check_in' => $this->faker->optional(0.9)->dateTimeBetween($date.' 07:00', $date.' 10:00'),
+            'check_out' => $this->faker->optional(0.8)->dateTimeBetween($date.' 15:00', $date.' 19:00'),
             'notes' => $this->faker->optional()->sentence,
             'created_at' => now(),
             'updated_at' => now(),

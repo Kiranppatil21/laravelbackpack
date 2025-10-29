@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\TestCase;
-use Stancl\Tenancy\Database\Models\Tenant;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Stancl\Tenancy\Database\Models\Tenant;
+use Tests\TestCase;
 
 class AdminActivateTenantTest extends TestCase
 {
@@ -27,10 +27,10 @@ class AdminActivateTenantTest extends TestCase
 
         $tenant = Tenant::find($tenantId);
 
-    // Call the controller action directly via the container to avoid any route binding / middleware interference in tests
-    $this->actingAs($admin);
-    $controller = app()->make(\App\Http\Controllers\Admin\TenantCrudController::class);
-    app()->call([$controller, 'activate'], ['tenant' => $tenant]);
+        // Call the controller action directly via the container to avoid any route binding / middleware interference in tests
+        $this->actingAs($admin);
+        $controller = app()->make(\App\Http\Controllers\Admin\TenantCrudController::class);
+        app()->call([$controller, 'activate'], ['tenant' => $tenant]);
 
         // Refreshing the Stancl Tenant model can be inconsistent with direct DB updates
         // in some test environments, so assert against the DB directly.

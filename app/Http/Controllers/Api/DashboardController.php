@@ -11,7 +11,7 @@ class DashboardController extends Controller
     {
         $user = $request->user();
 
-    $allowed = ['Super Admin', 'Agency Owner', 'HR', 'Client', 'Guard/Employee', 'Visitor'];
+        $allowed = ['Super Admin', 'Agency Owner', 'HR', 'Client', 'Guard/Employee', 'Visitor'];
 
         if (class_exists('\Spatie\Permission\Models\Role')) {
             if (! $user->hasAnyRole($allowed)) {

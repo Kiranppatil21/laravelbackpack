@@ -2,25 +2,26 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Backpack\CRUD\app\Http\Controllers\CrudController;
-use Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
-use Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
-use Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
-use Backpack\CRUD\app\Http\Controllers\Operations\DeleteOperation;
-use Backpack\CRUD\app\Http\Controllers\Operations\ShowOperation;
 use App\Http\Requests\PermissionRequest;
-use Spatie\Permission\Models\Permission;
+use Backpack\CRUD\app\Http\Controllers\CrudController;
+use Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
+use Backpack\CRUD\app\Http\Controllers\Operations\DeleteOperation;
+use Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
+use Backpack\CRUD\app\Http\Controllers\Operations\ShowOperation;
+use Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
-use Illuminate\Http\Request as HttpRequest;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request as HttpRequest;
+use Spatie\Permission\Models\Permission;
 
 class PermissionCrudController extends CrudController
 {
-    use ListOperation;
     use CreateOperation;
-    use UpdateOperation;
     use DeleteOperation;
+    use ListOperation;
     use ShowOperation;
+    use UpdateOperation;
+
     public function setup(): void
     {
         CRUD::setModel(Permission::class);

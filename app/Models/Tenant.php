@@ -32,4 +32,3 @@ class Tenant extends StanclTenant
         return $this->getKeyName(); // will return 'uuid'
     }
 }
-

@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\SignupRequest;
-use Illuminate\Http\Request;
-use App\Models\Tenant;
 use App\Models\Domain;
+use App\Models\Tenant;
 use App\Services\RazorpayResolverInterface;
+use Illuminate\Http\Request;
 
 class SignupController extends Controller
 {
@@ -16,6 +16,7 @@ class SignupController extends Controller
     {
         $this->razorpayResolver = $razorpayResolver;
     }
+
     public function show()
     {
         return view('signup.form');
@@ -25,8 +26,8 @@ class SignupController extends Controller
     {
         $validated = $request->validated();
         // Wrap tenant creation and Stripe calls in a transaction-like flow with cleanup on failure
-    $tenant = null;
-    $tenantIntId = null;
+        $tenant = null;
+        $tenantIntId = null;
         try {
             // Insert tenant row into central `tenants` table with UUID while
             // keeping integer `id` untouched for FK compatibility.
@@ -57,7 +58,7 @@ class SignupController extends Controller
 
             if ($gateway === 'razorpay') {
                 // create a Razorpay order and render a checkout view
-                $amount = isset($validated['amount']) ? (int)round($validated['amount'] * 100) : 0; // rupees to paise
+                $amount = isset($validated['amount']) ? (int) round($validated['amount'] * 100) : 0; // rupees to paise
                 $currency = 'INR';
 
                 // resolve Razorpay API via resolver (container-bound fakes will be preferred in tests)
@@ -74,6 +75,7 @@ class SignupController extends Controller
                 ]);
 
                 session()->flash('success', 'Razorpay order created. Redirecting to checkout...');
+
                 return view('razorpay.checkout', ['order_id' => $order['id'], 'amount' => $order['amount'], 'currency' => $currency]);
             }
             // Stripe flow
@@ -84,9 +86,9 @@ class SignupController extends Controller
             $customer = $stripe->customers->create([
                 'email' => $validated['admin_email'],
                 'name' => $validated['admin_name'],
-                    'metadata' => [
-                        'tenant_id' => $tenant ? $tenant->getKey() : $tenantIntId,
-                    ],
+                'metadata' => [
+                    'tenant_id' => $tenant ? $tenant->getKey() : $tenantIntId,
+                ],
             ]);
 
             $sessionParams = [
@@ -97,8 +99,8 @@ class SignupController extends Controller
                     'tenant_id' => $tenant ? $tenant->getKey() : $tenantIntId,
                     'admin_email' => $validated['admin_email'],
                 ],
-                'success_url' => rtrim(config('app.url'), '/') . route('signup.success', [], false) . '?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => rtrim(config('app.url'), '/') . route('signup.show', [], false) . '?cancel=1',
+                'success_url' => rtrim(config('app.url'), '/').route('signup.success', [], false).'?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => rtrim(config('app.url'), '/').route('signup.show', [], false).'?cancel=1',
             ];
 
             if ($priceId) {
@@ -111,7 +113,7 @@ class SignupController extends Controller
                 $sessionParams['line_items'] = [[
                     'price_data' => [
                         'currency' => 'usd',
-                        'product_data' => ['name' => $validated['name'] . ' plan'],
+                        'product_data' => ['name' => $validated['name'].' plan'],
                         'unit_amount' => 0,
                         'recurring' => ['interval' => 'month'],
                     ],
@@ -123,6 +125,7 @@ class SignupController extends Controller
 
             // Success: flash a message and redirect to Stripe Checkout
             session()->flash('success', 'Checkout session created. Redirecting to Stripe...');
+
             return redirect($session->url);
         } catch (\Exception $e) {
             // cleanup: remove tenant and domain if we created them to avoid orphan central tenants
@@ -144,7 +147,8 @@ class SignupController extends Controller
 
             // log and inform the user
             report($e);
-            session()->flash('error', 'There was an error starting the signup process: ' . $e->getMessage());
+            session()->flash('error', 'There was an error starting the signup process: '.$e->getMessage());
+
             return redirect()->back()->withInput();
         }
     }
@@ -152,6 +156,7 @@ class SignupController extends Controller
     public function success(Request $request)
     {
         $sessionId = $request->query('session_id');
+
         return view('signup.success', ['session_id' => $sessionId]);
     }
 }

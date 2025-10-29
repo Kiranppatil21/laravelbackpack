@@ -2,9 +2,9 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\Tenant;
 use App\Models\Domain;
+use App\Models\Tenant;
+use Illuminate\Console\Command;
 
 class CreateTenant extends Command
 {
@@ -18,7 +18,7 @@ class CreateTenant extends Command
         $domain = $this->argument('domain');
         $id = $this->option('id') ?: null;
 
-        $this->info("Creating tenant: {$name} (id: " . ($id ?? '<auto>') . ")");
+        $this->info("Creating tenant: {$name} (id: ".($id ?? '<auto>').')');
 
         // Create tenant row in central tenants table with a UUID while keeping
         // the integer primary key intact for existing FK relationships.

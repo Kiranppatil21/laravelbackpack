@@ -43,10 +43,10 @@ Route::group([
         // Admin endpoint to start a Stripe checkout session for a tenant
         Route::post('tenant/{id}/billing/checkout', 'BillingController@checkout')->name('tenant.billing.checkout');
         // Razorpay payments admin
-    Route::crud('razorpay-payment', 'RazorpayPaymentCrudController');
-    // allow both GET (from UI link) and POST (explicit action) for retry
-    Route::get('razorpay-payments/{id}/retry', 'RazorpayPaymentCrudController@retry')->name('razorpay.payments.retry.get');
-    Route::post('razorpay-payments/{id}/retry', 'RazorpayPaymentCrudController@retry')->name('razorpay.payments.retry');
+        Route::crud('razorpay-payment', 'RazorpayPaymentCrudController');
+        // allow both GET (from UI link) and POST (explicit action) for retry
+        Route::get('razorpay-payments/{id}/retry', 'RazorpayPaymentCrudController@retry')->name('razorpay.payments.retry.get');
+        Route::post('razorpay-payments/{id}/retry', 'RazorpayPaymentCrudController@retry')->name('razorpay.payments.retry');
     });
 }); // this should be the absolute last line of this file
 

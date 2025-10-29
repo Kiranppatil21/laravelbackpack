@@ -22,7 +22,7 @@ class InvoiceFactory extends Factory
             'date' => $date,
             'due_date' => now()->addDays(30)->format('Y-m-d'),
             'total' => $this->faker->randomFloat(2, 50, 5000),
-            'status' => $this->faker->randomElement(['draft','sent','paid']),
+            'status' => $this->faker->randomElement(['draft', 'sent', 'paid']),
             'notes' => $this->faker->optional()->sentence,
             'created_at' => now(),
             'updated_at' => now(),

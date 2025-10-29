@@ -27,11 +27,11 @@ class DemoUsersSeederTest extends TestCase
         $resp->assertStatus(200)->assertJsonStructure(['token', 'user']);
 
         // ensure returned user has the role (if spatie is available)
-            if (class_exists('\Spatie\Permission\Models\Role')) {
-                $token = $resp->json('token');
-                $userResp = $this->withHeader('Authorization', 'Bearer '.$token)->getJson('/api/user');
-                $userResp->assertStatus(200)->assertJsonStructure(['id','email','name','roles']);
-                $this->assertEquals('Super Admin', $userResp->json('roles.0.name'));
+        if (class_exists('\Spatie\Permission\Models\Role')) {
+            $token = $resp->json('token');
+            $userResp = $this->withHeader('Authorization', 'Bearer '.$token)->getJson('/api/user');
+            $userResp->assertStatus(200)->assertJsonStructure(['id', 'email', 'name', 'roles']);
+            $this->assertEquals('Super Admin', $userResp->json('roles.0.name'));
         }
     }
 }

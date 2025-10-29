@@ -2,28 +2,28 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Backpack\CRUD\app\Http\Controllers\CrudController;
-use Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
-use Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
-use Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
-use Backpack\CRUD\app\Http\Controllers\Operations\DeleteOperation;
-use Backpack\CRUD\app\Http\Controllers\Operations\ShowOperation;
-use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 use App\Http\Requests\TenantRequest;
-use Stancl\Tenancy\Database\Models\Tenant;
-use Stancl\Tenancy\Database\Models\Domain;
 use App\Models\TenantSubscription;
+use Backpack\CRUD\app\Http\Controllers\CrudController;
+use Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
+use Backpack\CRUD\app\Http\Controllers\Operations\DeleteOperation;
+use Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
+use Backpack\CRUD\app\Http\Controllers\Operations\ShowOperation;
+use Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
+use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
+use Stancl\Tenancy\Database\Models\Domain;
+use Stancl\Tenancy\Database\Models\Tenant;
 
 class TenantCrudController extends CrudController
 {
-    use ListOperation;
     use CreateOperation;
-    use UpdateOperation;
     use DeleteOperation;
+    use ListOperation;
     use ShowOperation;
+    use UpdateOperation;
 
     public function setup(): void
     {
@@ -41,7 +41,7 @@ class TenantCrudController extends CrudController
             'name' => 'subscription_status',
             'label' => 'Subscription',
             'type' => 'closure',
-            'function' => function($entry) {
+            'function' => function ($entry) {
                 // Prefer explicit tenant_subscriptions table
                 try {
                     $rec = TenantSubscription::where('tenant_id', $entry->getKey())->first();
@@ -67,6 +67,7 @@ class TenantCrudController extends CrudController
                 if ($status) {
                     $label = ucfirst((string) $status);
                     $class = in_array(strtolower($status), ['active', 'paid']) ? 'badge bg-success' : 'badge bg-warning text-dark';
+
                     return "<span class=\"{$class}\">{$label}</span>";
                 }
 
@@ -91,8 +92,9 @@ class TenantCrudController extends CrudController
             'name' => 'price_id',
             'label' => 'Price ID',
             'type' => 'closure',
-            'function' => function($entry) {
+            'function' => function ($entry) {
                 $rec = \App\Models\TenantSubscription::where('tenant_id', $entry->getKey())->first();
+
                 return $rec && $rec->price_id ? e($rec->price_id) : '<span class="text-muted">-</span>';
             },
             'escaped' => false,
@@ -102,8 +104,9 @@ class TenantCrudController extends CrudController
             'name' => 'stripe_customer_id',
             'label' => 'Stripe Customer',
             'type' => 'closure',
-            'function' => function($entry) {
+            'function' => function ($entry) {
                 $rec = \App\Models\TenantSubscription::where('tenant_id', $entry->getKey())->first();
+
                 return $rec && $rec->stripe_customer_id ? e($rec->stripe_customer_id) : '<span class="text-muted">-</span>';
             },
             'escaped' => false,
@@ -113,8 +116,9 @@ class TenantCrudController extends CrudController
             'name' => 'subscription_updated_at',
             'label' => 'Subscription updated',
             'type' => 'closure',
-            'function' => function($entry) {
+            'function' => function ($entry) {
                 $rec = \App\Models\TenantSubscription::where('tenant_id', $entry->getKey())->first();
+
                 return $rec && $rec->updated_at ? $rec->updated_at->toDateTimeString() : '<span class="text-muted">-</span>';
             },
             'escaped' => false,

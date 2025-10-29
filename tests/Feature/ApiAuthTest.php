@@ -4,7 +4,6 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class ApiAuthTest extends TestCase
@@ -14,7 +13,7 @@ class ApiAuthTest extends TestCase
     public function test_login_with_valid_credentials_returns_token()
     {
         $password = 'password';
-        $user = User::factory()->create([ 'password' => $password ]);
+        $user = User::factory()->create(['password' => $password]);
 
         $resp = $this->postJson('/api/login', [
             'email' => $user->email,
@@ -33,7 +32,7 @@ class ApiAuthTest extends TestCase
     public function test_access_dashboard_with_token_and_role()
     {
         $password = 'password';
-        $user = User::factory()->create([ 'password' => $password ]);
+        $user = User::factory()->create(['password' => $password]);
         // create role if spatie exists
         if (class_exists('\Spatie\Permission\Models\Role')) {
             \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'Visitor']);

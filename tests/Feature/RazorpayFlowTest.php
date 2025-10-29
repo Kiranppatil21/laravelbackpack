@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Stancl\Tenancy\Database\Models\Tenant;
+use Tests\TestCase;
 
 class RazorpayFlowTest extends TestCase
 {
@@ -16,15 +16,19 @@ class RazorpayFlowTest extends TestCase
         Config::set('queue.default', 'sync');
 
         // Fake Razorpay Api instance
-        $fake = new class {
+        $fake = new class
+        {
             public $order;
+
             public function __construct()
             {
-                $this->order = new class {
+                $this->order = new class
+                {
                     public function create($params)
                     {
                         return ['id' => 'order_fake_1', 'amount' => $params['amount'], 'currency' => $params['currency'], 'receipt' => $params['receipt']];
                     }
+
                     public function fetch($id)
                     {
                         return ['id' => $id, 'receipt' => null];
@@ -65,19 +69,24 @@ class RazorpayFlowTest extends TestCase
         ]);
 
         // Fake API responds to order fetch with receipt set to tenant id
-        $fake = new class($tenantId) {
+        $fake = new class($tenantId)
+        {
             public $order;
+
             public function __construct($tenantId)
             {
-                $this->order = new class($tenantId) {
+                $this->order = new class($tenantId)
+                {
                     private $tenantId;
+
                     public function __construct($t)
                     {
                         $this->tenantId = $t;
                     }
+
                     public function fetch($id)
                     {
-                        return ['id' => $id, 'receipt' => (string)$this->tenantId];
+                        return ['id' => $id, 'receipt' => (string) $this->tenantId];
                     }
                 };
             }

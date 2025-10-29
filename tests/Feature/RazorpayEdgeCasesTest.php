@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class RazorpayEdgeCasesTest extends TestCase
 {
@@ -32,11 +32,14 @@ class RazorpayEdgeCasesTest extends TestCase
         ]);
 
         // bind fake API so webhook processing can fetch order if needed
-        $fake = new class {
+        $fake = new class
+        {
             public $order;
+
             public function __construct()
             {
-                $this->order = new class {
+                $this->order = new class
+                {
                     public function fetch($id)
                     {
                         return ['id' => $id, 'receipt' => '1'];

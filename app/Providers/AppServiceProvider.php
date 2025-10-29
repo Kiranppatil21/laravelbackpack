@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -15,7 +15,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Bind the RazorpayResolver interface to the concrete implementation so it can be injected and mocked in tests
         $this->app->singleton(\App\Services\RazorpayResolverInterface::class, function ($app) {
-            return new \App\Services\RazorpayResolver();
+            return new \App\Services\RazorpayResolver;
         });
     }
 

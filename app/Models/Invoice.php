@@ -8,9 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Invoice extends Model
 {
+    use \App\Models\Concerns\BelongsToTenant;
     use CrudTrait;
     use HasFactory;
-    use \App\Models\Concerns\BelongsToTenant;
 
     /*
     |--------------------------------------------------------------------------
@@ -19,6 +19,7 @@ class Invoice extends Model
     */
 
     protected $table = 'invoices';
+
     // protected $primaryKey = 'id';
     // public $timestamps = false;
     protected $guarded = ['id'];

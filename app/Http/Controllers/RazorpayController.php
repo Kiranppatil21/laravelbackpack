@@ -2,14 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\DB;
-use App\Models\RazorpayPayment;
-use App\Models\TenantSubscription;
-use Stancl\Tenancy\Database\Models\Tenant;
 use App\Jobs\ProcessRazorpayPayment;
+use App\Models\RazorpayPayment;
 use App\Services\RazorpayResolverInterface;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class RazorpayController extends Controller
 {
@@ -19,6 +17,7 @@ class RazorpayController extends Controller
     {
         $this->razorpayResolver = $razorpayResolver;
     }
+
     public function webhook(Request $request)
     {
         // Verify webhook signature
@@ -30,6 +29,7 @@ class RazorpayController extends Controller
             $generated = hash_hmac('sha256', $payload, $secret);
             if (! hash_equals($generated, $signature)) {
                 Log::warning('Razorpay webhook signature mismatch');
+
                 return response('Invalid signature', 400);
             }
         }
@@ -73,7 +73,7 @@ class RazorpayController extends Controller
                         ProcessRazorpayPayment::dispatch($payment->id);
                     } catch (\Exception $e) {
                         // if dispatching fails, run inline as a fallback so webhooks still activate tenants in tests/environments without queue
-                        Log::warning('Dispatch failed for ProcessRazorpayPayment, running inline: ' . $e->getMessage());
+                        Log::warning('Dispatch failed for ProcessRazorpayPayment, running inline: '.$e->getMessage());
 
                         // resolve Razorpay API instance using the injected resolver and pass into job
                         $apiInstance = $this->razorpayResolver->resolve();
@@ -85,7 +85,7 @@ class RazorpayController extends Controller
                 break;
 
             default:
-                Log::info('Unhandled Razorpay event: ' . ($eventType ?? 'unknown'));
+                Log::info('Unhandled Razorpay event: '.($eventType ?? 'unknown'));
         }
 
         return response('OK');

@@ -2,18 +2,18 @@
 
 namespace Tests\Unit;
 
-use Tests\TestCase;
 use App\Services\RazorpayResolver;
+use Tests\TestCase;
 
 class RazorpayResolverTest extends TestCase
 {
     public function test_returns_container_bound_instance()
     {
-        $fake = new \stdClass();
+        $fake = new \stdClass;
         // bind under the common FQCN key
-        app()->bind('Razorpay\\Api\\Api', fn() => $fake);
+        app()->bind('Razorpay\\Api\\Api', fn () => $fake);
 
-        $resolver = new RazorpayResolver();
+        $resolver = new RazorpayResolver;
         $result = $resolver->resolve();
 
         $this->assertSame($fake, $result);
@@ -28,10 +28,10 @@ class RazorpayResolverTest extends TestCase
         // ensure no binding exists
         if (app()->bound('Razorpay\\Api\\Api')) {
             // rebind a closure that returns null to simulate unbound state
-            app()->bind('Razorpay\\Api\\Api', fn() => null);
+            app()->bind('Razorpay\\Api\\Api', fn () => null);
         }
 
-        $resolver = new RazorpayResolver();
+        $resolver = new RazorpayResolver;
         $result = $resolver->resolve();
 
         $this->assertNull($result);

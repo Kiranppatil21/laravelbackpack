@@ -2,11 +2,10 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Stancl\Tenancy\Database\Models\Tenant;
-use App\Models\TenantSubscription;
+use Tests\TestCase;
 
 class SignupFlowTest extends TestCase
 {
@@ -17,30 +16,39 @@ class SignupFlowTest extends TestCase
         Config::set('queue.default', 'sync');
 
         // bind a fake Stripe client into the container
-        $fake = new class {
+        $fake = new class
+        {
             public $customers;
+
             public $checkout;
+
             public function __construct()
             {
-                $this->customers = new class {
+                $this->customers = new class
+                {
                     public function create($data)
                     {
-                        $c = new \stdClass();
+                        $c = new \stdClass;
                         $c->id = 'cus_fake_1';
+
                         return $c;
                     }
                 };
 
-                $this->checkout = new class {
+                $this->checkout = new class
+                {
                     public $sessions;
+
                     public function __construct()
                     {
-                        $this->sessions = new class {
+                        $this->sessions = new class
+                        {
                             public function create($params)
                             {
-                                $s = new \stdClass();
+                                $s = new \stdClass;
                                 $s->url = 'https://stripe.fake/checkout';
                                 $s->id = 'cs_fake_1';
+
                                 return $s;
                             }
                         };
@@ -71,13 +79,13 @@ class SignupFlowTest extends TestCase
         Config::set('queue.default', 'sync');
 
         // create a tenant via DB (simulate pre-signup state)
-            $tenantId = \Illuminate\Support\Facades\DB::table('tenants')->insertGetId([
-                'uuid' => (string) \Illuminate\Support\Str::uuid(),
-                'name' => 'FlowTenant',
-                'domain' => 'flow.test',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+        $tenantId = \Illuminate\Support\Facades\DB::table('tenants')->insertGetId([
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
+            'name' => 'FlowTenant',
+            'domain' => 'flow.test',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
         $tenant = Tenant::find($tenantId);
 

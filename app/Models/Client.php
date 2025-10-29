@@ -8,9 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Client extends Model
 {
+    use \App\Models\Concerns\BelongsToTenant;
     use CrudTrait;
     use HasFactory;
-    use \App\Models\Concerns\BelongsToTenant;
 
     /**
      * The attributes that are mass assignable.
