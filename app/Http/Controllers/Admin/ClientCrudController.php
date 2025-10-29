@@ -10,9 +10,13 @@ use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
  * Class ClientCrudController
  *
  * @property-read \Backpack\CRUD\app\Library\CrudPanel\CrudPanel $crud
+ * @method mixed store()
+ * @method mixed update()
+ * @method mixed destroy($id = null)
  */
 class ClientCrudController extends CrudController
 {
+    use \Illuminate\Foundation\Auth\Access\AuthorizesRequests;
     use \Backpack\CRUD\app\Http\Controllers\Operations\CreateOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\DeleteOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
@@ -115,9 +119,12 @@ class ClientCrudController extends CrudController
 
     public function store()
     {
-        $this->authorize('create', \App\Models\Client::class);
+    $this->authorize('create', \App\Models\Client::class);
 
-        return parent::store();
+    // parent::store() is provided via Backpack operation traits at runtime; PHPStan
+    // sometimes cannot trace these trait-provided methods on the parent type.
+    // @phpstan-ignore-next-line
+    return parent::store();
     }
 
     public function update()
@@ -127,16 +134,22 @@ class ClientCrudController extends CrudController
             $this->authorize('update', $entry);
         }
 
-        return parent::update();
+    // @phpstan-ignore-next-line
+    return parent::update();
     }
 
     public function destroy($id = null)
     {
-        $entry = $this->crud->getCurrentEntry() ?? $this->crud->getModel()::find($id);
+        $entry = $this->crud->getCurrentEntry();
+        if (! $entry && $id !== null) {
+            $entry = $this->crud->getModel()::find($id);
+        }
+
         if ($entry) {
             $this->authorize('delete', $entry);
         }
 
-        return parent::destroy($id);
+    // @phpstan-ignore-next-line
+    return parent::destroy($id);
     }
 }
