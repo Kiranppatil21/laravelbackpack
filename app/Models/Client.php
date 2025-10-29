@@ -29,12 +29,12 @@ class Client extends Model
         'agency_id',
     ];
 
-    public function agency()
+    public function agency(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Agency::class, 'agency_id');
     }
 
-    public function employees()
+    public function employees(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Employee::class, 'client_id');
     }

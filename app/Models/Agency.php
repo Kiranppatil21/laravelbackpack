@@ -37,12 +37,12 @@ class Agency extends Model
     | RELATIONS
     |--------------------------------------------------------------------------
     */
-    public function clients()
+    public function clients(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Client::class, 'agency_id');
     }
 
-    public function employees()
+    public function employees(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(Employee::class, 'agency_id');
     }
