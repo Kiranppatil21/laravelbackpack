@@ -23,4 +23,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Dashboard endpoint — role enforcement performed inside controller to avoid middleware alias issues in some environments
     Route::get('/dashboard', [\App\Http\Controllers\Api\DashboardController::class, 'show']);
+
+    // Agencies & Clients API for React frontend / SPA
+    Route::apiResource('agencies', \App\Http\Controllers\Api\AgencyController::class);
+    Route::apiResource('clients', \App\Http\Controllers\Api\ClientController::class);
 });

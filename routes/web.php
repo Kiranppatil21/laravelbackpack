@@ -35,6 +35,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Inertia pages for Agencies & Clients (SPA)
+    Route::get('/agencies', function () { return Inertia::render('Agencies/Index'); })->name('agencies.index');
+    Route::get('/agencies/create', function () { return Inertia::render('Agencies/Create'); })->name('agencies.create');
+    Route::get('/agencies/{id}/edit', function ($id) { return Inertia::render('Agencies/Edit', ['id' => $id]); })->name('agencies.edit');
+
+    Route::get('/clients', function () { return Inertia::render('Clients/Index'); })->name('clients.index');
+    Route::get('/clients/create', function () { return Inertia::render('Clients/Create'); })->name('clients.create');
+    Route::get('/clients/{id}/edit', function ($id) { return Inertia::render('Clients/Edit', ['id' => $id]); })->name('clients.edit');
 });
 
 require __DIR__.'/auth.php';

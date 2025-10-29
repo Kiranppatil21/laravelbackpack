@@ -50,6 +50,12 @@ class ClientCrudController extends CrudController
         // Add visible columns here (see below)
         $this->crud->addColumn(['name' => 'name', 'label' => 'Client Name']);
         $this->crud->addColumn(['name' => 'email', 'label' => 'Email']);
+        $this->crud->addColumn([
+            'name' => 'agency',
+            'type' => 'relationship',
+            'label' => 'Agency',
+            'attribute' => 'name',
+        ]);
         // Add more columns as you need
     }
 
@@ -78,6 +84,18 @@ class ClientCrudController extends CrudController
             'name' => 'email',
             'type' => 'email',
             'label' => 'Email',
+        ]);
+        // Agency selector (optional)
+        $this->crud->addField([
+            'label' => 'Agency',
+            'type' => 'select2',
+            'name' => 'agency_id',
+            'entity' => 'agency',
+            'attribute' => 'name',
+            'model' => "App\\Models\\Agency",
+            'wrapper' => [
+                'class' => 'form-group col-md-6',
+            ],
         ]);
         // Add additional fields as needed, for example:
         // $this->crud->addField([...]);
