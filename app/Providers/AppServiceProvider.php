@@ -4,7 +4,12 @@ namespace App\Providers;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Vite;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use App\Models\Agency;
+use App\Models\Client;
+use App\Policies\AgencyPolicy;
+use App\Policies\ClientPolicy;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -25,6 +30,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
+
+        // Register model policies here so the app can use $this->authorize(...) or policy middleware
+        Gate::policy(Agency::class, AgencyPolicy::class);
+        Gate::policy(Client::class, ClientPolicy::class);
 
         // Ensure routes/api.php is loaded in projects that don't include a custom RouteServiceProvider
         $apiRoutes = base_path('routes/api.php');
