@@ -1,17 +1,15 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 export default function Edit({ id }) {
-    const [name, setName] = useState('');
-    const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(true);
-    const [submitting, setSubmitting] = useState(false);
+    const form = useForm({ name: '' });
 
     useEffect(() => {
         window.axios.get(`/api/agencies/${id}`)
             .then((res) => {
-                setName(res.data.name || '');
+                form.setData('name', res.data.name || '');
             })
             .catch(() => {})
             .finally(() => setLoading(false));
@@ -19,21 +17,9 @@ export default function Edit({ id }) {
 
     const submit = (e) => {
         e.preventDefault();
-        setErrors({});
-        if (! name.trim()) {
-            setErrors({ name: 'Name is required' });
-            return;
-        }
-
-        setSubmitting(true);
-        window.axios.put(`/api/agencies/${id}`, { name })
-            .then(() => window.location.href = '/agencies')
-            .catch((err) => {
-                if (err.response && err.response.status === 422) {
-                    setErrors(err.response.data.errors || {});
-                }
-            })
-            .finally(() => setSubmitting(false));
+        form.put(`/api/agencies/${id}`, {
+            onSuccess: () => router.visit('/agencies'),
+        });
     };
 
     if (loading) {
@@ -49,12 +35,12 @@ export default function Edit({ id }) {
                         <form onSubmit={submit}>
                             <div className="mb-4">
                                 <label className="block text-sm font-medium text-gray-700">Name</label>
-                                <input value={name} onChange={(e) => setName(e.target.value)} className="mt-1 block w-full" />
-                                {errors.name && <div className="text-red-600 text-sm">{errors.name}</div>}
+                                <input value={form.data.name} onChange={(e) => form.setData('name', e.target.value)} className="mt-1 block w-full" />
+                                {form.errors.name && <div className="text-red-600 text-sm">{form.errors.name}</div>}
                             </div>
 
                             <div className="flex items-center gap-2">
-                                <button type="submit" className="btn btn-primary" disabled={submitting}>Save</button>
+                                <button type="submit" className="btn btn-primary" disabled={form.processing}>Save</button>
                                 <Link href="/agencies" className="btn">Cancel</Link>
                             </div>
                         </form>

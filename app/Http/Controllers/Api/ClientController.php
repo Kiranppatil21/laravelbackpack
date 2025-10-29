@@ -25,16 +25,15 @@ class ClientController extends Controller
 
     public function show(Request $request, Client $client): JsonResponse
     {
-        $user = $request->user();
-        if (! $this->canAccess($user, $client)) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
+        $this->authorize('view', $client);
 
         return response()->json($client->load('agency', 'employees'));
     }
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Client::class);
+
         $data = $request->validate([
             'name' => 'required|string|max:191',
             'email' => 'required|email|max:191',
@@ -59,10 +58,7 @@ class ClientController extends Controller
 
     public function update(Request $request, Client $client): JsonResponse
     {
-        $user = $request->user();
-        if (! $this->canAccess($user, $client)) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
+        $this->authorize('update', $client);
 
         $data = $request->validate([
             'name' => 'sometimes|required|string|max:191',
@@ -84,10 +80,7 @@ class ClientController extends Controller
 
     public function destroy(Request $request, Client $client): JsonResponse
     {
-        $user = $request->user();
-        if (! $this->canAccess($user, $client)) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
+        $this->authorize('delete', $client);
 
         $client->delete();
 

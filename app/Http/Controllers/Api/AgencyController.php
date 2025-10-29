@@ -25,16 +25,15 @@ class AgencyController extends Controller
 
     public function show(Request $request, Agency $agency): JsonResponse
     {
-        $user = $request->user();
-        if (! $this->canAccess($user, $agency)) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
+        $this->authorize('view', $agency);
 
         return response()->json($agency->load('clients'));
     }
 
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Agency::class);
+
         $data = $request->validate([
             'name' => 'required|string|max:191',
         ]);
@@ -50,10 +49,7 @@ class AgencyController extends Controller
 
     public function update(Request $request, Agency $agency): JsonResponse
     {
-        $user = $request->user();
-        if (! $this->canAccess($user, $agency)) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
+        $this->authorize('update', $agency);
 
         $data = $request->validate([
             'name' => 'sometimes|required|string|max:191',
@@ -66,10 +62,7 @@ class AgencyController extends Controller
 
     public function destroy(Request $request, Agency $agency): JsonResponse
     {
-        $user = $request->user();
-        if (! $this->canAccess($user, $agency)) {
-            return response()->json(['message' => 'Forbidden'], 403);
-        }
+        $this->authorize('delete', $agency);
 
         $agency->delete();
 
