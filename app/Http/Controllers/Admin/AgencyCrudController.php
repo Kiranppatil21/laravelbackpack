@@ -77,4 +77,32 @@ class AgencyCrudController extends CrudController
     {
         $this->setupCreateOperation();
     }
+
+    // Override store/update/destroy to enforce policies via the base Controller authorize helper
+    public function store()
+    {
+        $this->authorize('create', \App\Models\Agency::class);
+
+        return parent::store();
+    }
+
+    public function update()
+    {
+        $entry = $this->crud->getCurrentEntry();
+        if ($entry) {
+            $this->authorize('update', $entry);
+        }
+
+        return parent::update();
+    }
+
+    public function destroy($id = null)
+    {
+        $entry = $this->crud->getCurrentEntry() ?? $this->crud->getModel()::find($id);
+        if ($entry) {
+            $this->authorize('delete', $entry);
+        }
+
+        return parent::destroy($id);
+    }
 }

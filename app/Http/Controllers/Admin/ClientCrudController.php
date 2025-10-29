@@ -112,4 +112,31 @@ class ClientCrudController extends CrudController
     {
         $this->setupCreateOperation();
     }
+
+    public function store()
+    {
+        $this->authorize('create', \App\Models\Client::class);
+
+        return parent::store();
+    }
+
+    public function update()
+    {
+        $entry = $this->crud->getCurrentEntry();
+        if ($entry) {
+            $this->authorize('update', $entry);
+        }
+
+        return parent::update();
+    }
+
+    public function destroy($id = null)
+    {
+        $entry = $this->crud->getCurrentEntry() ?? $this->crud->getModel()::find($id);
+        if ($entry) {
+            $this->authorize('delete', $entry);
+        }
+
+        return parent::destroy($id);
+    }
 }
