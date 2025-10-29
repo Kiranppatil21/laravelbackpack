@@ -23,9 +23,10 @@ class AgencyApiTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $user = User::factory()->create(['tenant_id' => $tenantId]);
-
-        $this->actingAs($user);
+    $user = User::factory()->create();
+    // attach tenant_id in-memory for authorization checks (not persisted on users table)
+    $user->tenant_id = $tenantId;
+    $this->actingAs($user);
 
         $resp = $this->postJson('/api/agencies', ['name' => 'New Agency']);
 
