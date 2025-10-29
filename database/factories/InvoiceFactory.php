@@ -16,6 +16,7 @@ class InvoiceFactory extends Factory
 
         return [
             'tenant_id' => null,
+            'tenant_uuid' => null,
             // create a client automatically
             'client_id' => Client::factory(),
             'invoice_number' => strtoupper($this->faker->bothify('INV-####-??')),

@@ -17,6 +17,10 @@ use Illuminate\Http\Request;
 use Stancl\Tenancy\Database\Models\Domain;
 use Stancl\Tenancy\Database\Models\Tenant;
 
+/**
+ * @method mixed traitStore()
+ * @method mixed traitUpdate()
+ */
 class TenantCrudController extends CrudController
 {
     use CreateOperation;
@@ -152,10 +156,17 @@ class TenantCrudController extends CrudController
 
         $domain = request()->input('domain');
         if ($domain) {
+            // create a Domain record pointing to this tenant. Try to compute tenant_uuid when possible.
+            $tenantId = $tenant->getTenantKey();
+            $tenantUuid = is_string($tenantId) && preg_match('/[0-9a-fA-F\-]{36}/', $tenantId)
+                ? $tenantId
+                : (\Illuminate\Support\Facades\DB::table('tenants')->where('id', $tenantId)->value('uuid') ?? null);
+
             // create a Domain record pointing to this tenant
             Domain::create([
                 'domain' => $domain,
-                'tenant_id' => $tenant->getTenantKey(),
+                'tenant_id' => $tenantId,
+                'tenant_uuid' => $tenantUuid,
             ]);
         }
 
@@ -170,9 +181,15 @@ class TenantCrudController extends CrudController
         $tenant = $this->data['entry'];
         $domain = request()->input('domain');
         if ($domain) {
+            $tenantId = $tenant->getTenantKey();
+            $tenantUuid = is_string($tenantId) && preg_match('/[0-9a-fA-F\-]{36}/', $tenantId)
+                ? $tenantId
+                : (\Illuminate\Support\Facades\DB::table('tenants')->where('id', $tenantId)->value('uuid') ?? null);
+
             Domain::firstOrCreate([
                 'domain' => $domain,
-                'tenant_id' => $tenant->getTenantKey(),
+                'tenant_id' => $tenantId,
+                'tenant_uuid' => $tenantUuid,
             ]);
         }
 

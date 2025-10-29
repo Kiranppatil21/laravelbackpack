@@ -91,16 +91,41 @@ class ProcessRazorpayPayment implements ShouldQueue
         try {
             $central = config('tenancy.database.central_connection') ?? null;
             if ($central) {
+                // compute tenant_uuid where possible
+                $tenantUuid = null;
+                if (is_string($tenantId) && preg_match('/[0-9a-fA-F\-]{36}/', $tenantId)) {
+                    $tenantUuid = $tenantId;
+                } else {
+                    try {
+                        $tenantUuid = DB::connection($central)->table('tenants')->where('id', $tenantId)->value('uuid');
+                    } catch (\Throwable $e) {
+                        $tenantUuid = null;
+                    }
+                }
+
                 DB::connection($central)->table('tenant_subscriptions')->updateOrInsert(
                     ['tenant_id' => $tenantId],
-                    ['subscription_id' => $payment->payment_id, 'stripe_customer_id' => null, 'price_id' => null, 'status' => 'paid', 'raw' => json_encode($payment->raw), 'updated_at' => now(), 'created_at' => now()]
+                    ['tenant_uuid' => $tenantUuid, 'subscription_id' => $payment->payment_id, 'stripe_customer_id' => null, 'price_id' => null, 'status' => 'paid', 'raw' => json_encode($payment->raw), 'updated_at' => now(), 'created_at' => now()]
                 );
 
                 DB::connection($central)->table('tenants')->where('id', $tenantId)->update(['active' => true, 'activated_at' => now()]);
             } else {
+                // compute tenant_uuid for local DB writes
+                $tenantUuid = null;
+                if (is_string($tenantId) && preg_match('/[0-9a-fA-F\-]{36}/', $tenantId)) {
+                    $tenantUuid = $tenantId;
+                } else {
+                    try {
+                        $tenantUuid = DB::table('tenants')->where('id', $tenantId)->value('uuid');
+                    } catch (\Throwable $e) {
+                        $tenantUuid = null;
+                    }
+                }
+
                 TenantSubscription::updateOrCreate(
                     ['tenant_id' => $tenantId],
                     [
+                        'tenant_uuid' => $tenantUuid,
                         'subscription_id' => $payment->payment_id,
                         'stripe_customer_id' => null,
                         'price_id' => null,

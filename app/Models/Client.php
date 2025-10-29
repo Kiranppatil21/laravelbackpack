@@ -6,6 +6,9 @@ use Backpack\CRUD\app\Models\Traits\CrudTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property string|null $tenant_uuid
+ */
 class Client extends Model
 {
     use \App\Models\Concerns\BelongsToTenant;
@@ -16,11 +19,12 @@ class Client extends Model
      * The attributes that are mass assignable.
      * Add fields as needed by your app.
      *
-     * @var array<int,string>
+     * @var list<string>
      */
     protected $fillable = [
         'name',
         'email',
         'tenant_id',
+        'tenant_uuid',
     ];
 }

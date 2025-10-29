@@ -16,7 +16,7 @@ class ReconcileSubscriptions extends Command
     {
         $this->info('Starting reconciliation');
 
-        $stripeKey = env('STRIPE_SECRET');
+    $stripeKey = config('services.stripe.secret');
         if (! $stripeKey) {
             $this->warn('STRIPE_SECRET not set — DB-only checks will be performed (no remote Stripe API checks).');
         }
@@ -46,6 +46,7 @@ class ReconcileSubscriptions extends Command
                 if ($cursor) {
                     $params['starting_after'] = $cursor;
                 }
+                // @phpstan-ignore-next-line Stripe client accepts a broader set of params at runtime
                 $resp = $stripe->subscriptions->all($params);
                 foreach ($resp->data as $sub) {
                     $subId = $sub->id;
@@ -56,16 +57,28 @@ class ReconcileSubscriptions extends Command
                         // if fix flag and metadata.tenant_id present, create mapping
                         if ($this->option('fix') && isset($sub->metadata) && isset($sub->metadata->tenant_id)) {
                             $tenantId = $sub->metadata->tenant_id;
-                            $tenant = Tenant::find($tenantId);
-                            if ($tenant) {
-                                TenantSubscription::create([
-                                    'tenant_id' => $tenant->getKey(),
-                                    'subscription_id' => $subId,
-                                    'stripe_customer_id' => $sub->customer ?? null,
-                                    'price_id' => $sub->items->data[0]->price->id ?? null,
-                                    'status' => $sub->status ?? null,
-                                    'raw' => json_decode(json_encode($sub), true),
-                                ]);
+                                $tenant = Tenant::find($tenantId);
+                                if ($tenant) {
+                                    $tenantKey = $tenant->getKey();
+                                    $tenantUuid = is_string($tenantKey) && preg_match('/[0-9a-fA-F\-]{36}/', $tenantKey) ? $tenantKey : null;
+                                    // if tenantKey is numeric but we still want UUID, try reading central table
+                                    if (! $tenantUuid && is_numeric($tenantId)) {
+                                        try {
+                                            $tenantUuid = \Illuminate\Support\Facades\DB::table('tenants')->where('id', $tenantId)->value('uuid');
+                                        } catch (\Throwable $e) {
+                                            $tenantUuid = null;
+                                        }
+                                    }
+
+                                    TenantSubscription::create([
+                                        'tenant_id' => $tenant->getKey(),
+                                        'tenant_uuid' => $tenantUuid,
+                                        'subscription_id' => $subId,
+                                        'stripe_customer_id' => $sub->customer ?? null,
+                                        'price_id' => $sub->items->data[0]->price->id ?? null,
+                                        'status' => $sub->status ?? null,
+                                        'raw' => json_decode(json_encode($sub), true),
+                                    ]);
                                 $this->info(" -> Fixed mapping for subscription {$subId} -> tenant {$tenantId}");
                             } else {
                                 $this->warn(" -> metadata tenant_id={$tenantId} not found in tenants table");

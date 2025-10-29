@@ -54,6 +54,8 @@ class AuthController extends Controller
         // Fire Registered event and send verification (if implemented)
         try {
             event(new Registered($user));
+            // method_exists check uses runtime trait behavior; suppress phpstan here
+            // @phpstan-ignore-next-line
             if (method_exists($user, 'sendEmailVerificationNotification')) {
                 $user->sendEmailVerificationNotification();
             }

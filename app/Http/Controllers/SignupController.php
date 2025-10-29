@@ -50,9 +50,10 @@ class SignupController extends Controller
             Domain::create([
                 'domain' => $validated['domain'],
                 'tenant_id' => $tenantIntId,
+                'tenant_uuid' => $uuid,
             ]);
 
-            $priceId = $validated['price_id'] ?? env('STRIPE_PRICE_ID');
+            $priceId = $validated['price_id'] ?? config('services.stripe.price_id');
 
             $gateway = $validated['gateway'] ?? 'stripe';
 

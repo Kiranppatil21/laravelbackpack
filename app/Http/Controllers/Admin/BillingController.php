@@ -18,12 +18,12 @@ class BillingController
             return response()->json(['message' => 'Tenant not found'], 404);
         }
 
-        $priceId = $request->input('price_id') ?: env('STRIPE_PRICE_ID');
+    $priceId = $request->input('price_id') ?: config('services.stripe.price_id');
         if (! $priceId) {
             return response()->json(['message' => 'No price_id provided and STRIPE_PRICE_ID not set'], 400);
         }
 
-        $stripe = new \Stripe\StripeClient(env('STRIPE_SECRET'));
+    $stripe = new \Stripe\StripeClient(config('services.stripe.secret'));
 
         $session = $stripe->checkout->sessions->create([
             'payment_method_types' => ['card'],
@@ -50,7 +50,7 @@ class BillingController
     {
         $payload = $request->getContent();
         $sigHeader = $request->header('Stripe-Signature');
-        $webhookSecret = env('STRIPE_WEBHOOK_SECRET');
+    $webhookSecret = config('services.stripe.webhook_secret');
 
         try {
             if ($webhookSecret) {

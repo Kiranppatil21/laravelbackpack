@@ -63,9 +63,22 @@ class ProcessStripeEvent implements ShouldQueue
                 }
 
                 if ($foundTenantId) {
+                    // determine tenant_uuid when possible (foundTenantId may be integer id or UUID)
+                    $tenantUuid = null;
+                    if (is_string($foundTenantId) && preg_match('/[0-9a-fA-F\-]{36}/', $foundTenantId)) {
+                        $tenantUuid = $foundTenantId;
+                    } elseif (is_numeric($foundTenantId)) {
+                        try {
+                            $tenantUuid = DB::table('tenants')->where('id', $foundTenantId)->value('uuid');
+                        } catch (\Throwable $e) {
+                            $tenantUuid = null;
+                        }
+                    }
+
                     TenantSubscription::updateOrCreate(
                         ['tenant_id' => $foundTenantId],
                         [
+                            'tenant_uuid' => $tenantUuid,
                             'subscription_id' => $subscriptionId,
                             'stripe_customer_id' => $customerId,
                             'status' => 'active',
@@ -101,9 +114,22 @@ class ProcessStripeEvent implements ShouldQueue
 
                 if ($tenant) {
                     $tenantIdToUse = $tenant->getKey();
+                    // compute tenant_uuid where available
+                    $tenantUuid = null;
+                    if (is_string($tenantIdToUse) && preg_match('/[0-9a-fA-F\-]{36}/', $tenantIdToUse)) {
+                        $tenantUuid = $tenantIdToUse;
+                    } else {
+                        try {
+                            $tenantUuid = DB::table('tenants')->where('id', $tenantIdToUse)->value('uuid');
+                        } catch (\Throwable $e) {
+                            $tenantUuid = null;
+                        }
+                    }
+
                     TenantSubscription::updateOrCreate(
                         ['tenant_id' => $tenantIdToUse],
                         [
+                            'tenant_uuid' => $tenantUuid,
                             'subscription_id' => $subscriptionId,
                             'stripe_customer_id' => $sub['customer'] ?? null,
                             'price_id' => $sub['items']['data'][0]['price']['id'] ?? ($sub['items'][0]['price']['id'] ?? null),
@@ -132,7 +158,7 @@ class ProcessStripeEvent implements ShouldQueue
                     if ($rec) {
                         $status = $invoice['status'] ?? null;
                         if ($status) {
-                            $rec->update(['status' => $status, 'raw' => $invoice]);
+                                $rec->update(['status' => $status, 'raw' => $invoice]);
                             try {
                                 if ($status === 'paid' || $status === 'succeeded') {
                                     $tenantIdToUse = $rec->tenant_id;

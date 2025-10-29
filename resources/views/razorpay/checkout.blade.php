@@ -14,8 +14,8 @@
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script>
         (function(){
-            const options = {
-                "key": "{{ env('RAZORPAY_KEY_ID') }}",
+      const options = {
+        "key": "{{ config('services.razorpay.key_id') }}",
                 "amount": {{ $amount }}, // in paise
                 "currency": "{{ $currency ?? 'INR' }}",
                 "name": "{{ config('app.name') }}",

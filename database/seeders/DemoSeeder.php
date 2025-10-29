@@ -42,6 +42,7 @@ class DemoSeeder extends Seeder
             for ($i = 0; $i < 10; $i++) {
                 $clientIds[] = DB::table('clients')->insertGetId([
                     'tenant_id' => null,
+                    'tenant_uuid' => null,
                     'name' => $faker->name,
                     'email' => $faker->unique()->safeEmail,
                     'phone' => $faker->phoneNumber,
@@ -56,6 +57,7 @@ class DemoSeeder extends Seeder
             for ($i = 0; $i < 10; $i++) {
                 $employeeIds[] = DB::table('employees')->insertGetId([
                     'tenant_id' => null,
+                    'tenant_uuid' => null,
                     'agency_id' => $faker->randomElement($agencyIds),
                     'first_name' => $faker->firstName,
                     'last_name' => $faker->lastName,
@@ -74,6 +76,7 @@ class DemoSeeder extends Seeder
                 $date = $faker->dateTimeBetween('-60 days', 'now')->format('Y-m-d');
                 DB::table('attendance')->insert([
                     'tenant_id' => null,
+                    'tenant_uuid' => null,
                     'employee_id' => $emp,
                     'date' => $date,
                     'status' => $faker->randomElement(['present', 'absent', 'leave']),
@@ -96,6 +99,7 @@ class DemoSeeder extends Seeder
 
                 DB::table('payrolls')->insert([
                     'tenant_id' => null,
+                    'tenant_uuid' => null,
                     'employee_id' => $emp,
                     'period_start' => $start->format('Y-m-d'),
                     'period_end' => $end->format('Y-m-d'),
@@ -117,6 +121,7 @@ class DemoSeeder extends Seeder
 
                 DB::table('invoices')->insert([
                     'tenant_id' => null,
+                    'tenant_uuid' => null,
                     'client_id' => $client,
                     'invoice_number' => strtoupper($faker->bothify('INV-####-??')),
                     'date' => $date,

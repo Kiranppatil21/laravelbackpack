@@ -16,6 +16,7 @@ class AttendanceFactory extends Factory
 
         return [
             'tenant_id' => null,
+            'tenant_uuid' => null,
             // create an employee automatically and associate
             'employee_id' => Employee::factory(),
             'date' => $date,

@@ -11,6 +11,9 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * @property int|null $tenant_id
+ */
 class User extends Authenticatable implements MustVerifyEmail
 {
     use CrudTrait;

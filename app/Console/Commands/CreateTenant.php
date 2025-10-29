@@ -52,6 +52,7 @@ class CreateTenant extends Command
         Domain::create([
             'domain' => $domain,
             'tenant_id' => $tenantIntId,
+            'tenant_uuid' => $uuid,
         ]);
 
         $this->info("Tenant created with id {$tenant->getTenantKey()} and domain {$domain}.");

@@ -13,6 +13,7 @@ class ClientFactory extends Factory
     {
         return [
             'tenant_id' => null,
+            'tenant_uuid' => null,
             'name' => $this->faker->name,
             'email' => $this->faker->unique()->safeEmail,
             'phone' => $this->faker->phoneNumber,

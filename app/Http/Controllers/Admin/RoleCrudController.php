@@ -12,6 +12,10 @@ use Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
 use Spatie\Permission\Models\Role;
 
+/**
+ * @method mixed traitStore()
+ * @method mixed traitUpdate()
+ */
 class RoleCrudController extends CrudController
 {
     use CreateOperation;

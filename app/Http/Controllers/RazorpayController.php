@@ -22,8 +22,9 @@ class RazorpayController extends Controller
     {
         // Verify webhook signature
         $payload = $request->getContent();
-        $signature = $request->header('X-Razorpay-Signature');
-        $secret = env('RAZORPAY_WEBHOOK_SECRET');
+    $signature = $request->header('X-Razorpay-Signature');
+    // read webhook secret from config (phpstan-friendly)
+    $secret = config('services.razorpay.webhook_secret');
 
         if ($secret && $signature) {
             $generated = hash_hmac('sha256', $payload, $secret);
@@ -65,6 +66,9 @@ class RazorpayController extends Controller
                         'order_id' => $orderId,
                         'amount' => $amount,
                         'currency' => $currency,
+                        // tenant_uuid may not be known at webhook time; write null so later background job
+                        // (ProcessRazorpayPayment) can populate it when it determines the tenant mapping.
+                        'tenant_uuid' => null,
                         'raw' => $entity,
                     ]);
 

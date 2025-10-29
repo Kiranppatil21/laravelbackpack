@@ -31,8 +31,9 @@ class RazorpayResolver implements RazorpayResolverInterface
 
         if (class_exists('Razorpay\\Api\\Api')) {
             try {
-                $keyId = env('RAZORPAY_KEY_ID');
-                $keySecret = env('RAZORPAY_KEY_SECRET');
+                // prefer config values (phpstan-friendly)
+                $keyId = config('services.razorpay.key_id');
+                $keySecret = config('services.razorpay.key_secret');
                 if ($keyId && $keySecret) {
                     return new \Razorpay\Api\Api($keyId, $keySecret);
                 }

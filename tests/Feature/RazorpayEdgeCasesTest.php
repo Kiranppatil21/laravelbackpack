@@ -11,8 +11,8 @@ class RazorpayEdgeCasesTest extends TestCase
 
     public function test_signature_mismatch_returns_400()
     {
-        // ensure webhook secret is set so signature verification runs
-        putenv('RAZORPAY_WEBHOOK_SECRET=testing_secret');
+    // ensure webhook secret is set so signature verification runs
+    config(['services.razorpay.webhook_secret' => 'testing_secret']);
 
         $payload = ['event' => 'payment.captured', 'payload' => ['payment' => ['entity' => ['id' => 'p1']]]];
         $response = $this->withHeaders(['X-Razorpay-Signature' => 'bad'])->postJson('/razorpay/webhook', $payload);

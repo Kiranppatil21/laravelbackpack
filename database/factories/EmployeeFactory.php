@@ -14,6 +14,7 @@ class EmployeeFactory extends Factory
     {
         return [
             'tenant_id' => null,
+            'tenant_uuid' => null,
             // create an agency automatically when creating an employee
             'agency_id' => Agency::factory(),
             'first_name' => $this->faker->firstName,

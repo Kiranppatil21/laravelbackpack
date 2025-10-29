@@ -102,21 +102,44 @@ class RazorpayPaymentCrudController extends CrudController
             // fallback: write directly to central DB if we have a tenant mapping
             try {
                 if ($tenantId) {
-                    if ($central) {
-                        DB::connection($central)->table('tenant_subscriptions')->updateOrInsert(
-                            ['tenant_id' => $tenantId],
-                            ['subscription_id' => $payment->payment_id, 'stripe_customer_id' => null, 'price_id' => null, 'status' => 'paid', 'raw' => json_encode($payment->raw), 'updated_at' => now(), 'created_at' => now()]
-                        );
+                        if ($central) {
+                            // compute tenant_uuid if possible
+                            $tenantUuid = null;
+                            if (is_string($tenantId) && preg_match('/[0-9a-fA-F\-]{36}/', $tenantId)) {
+                                $tenantUuid = $tenantId;
+                            } else {
+                                try {
+                                    $tenantUuid = DB::connection($central)->table('tenants')->where('id', $tenantId)->value('uuid');
+                                } catch (\Throwable $e) {
+                                    $tenantUuid = null;
+                                }
+                            }
 
-                        DB::connection($central)->table('tenants')->where('id', $tenantId)->update(['active' => true, 'activated_at' => now()]);
-                    } else {
-                        DB::table('tenant_subscriptions')->updateOrInsert(
-                            ['tenant_id' => $tenantId],
-                            ['subscription_id' => $payment->payment_id, 'stripe_customer_id' => null, 'price_id' => null, 'status' => 'paid', 'raw' => json_encode($payment->raw), 'updated_at' => now(), 'created_at' => now()]
-                        );
+                            DB::connection($central)->table('tenant_subscriptions')->updateOrInsert(
+                                ['tenant_id' => $tenantId],
+                                ['tenant_uuid' => $tenantUuid, 'subscription_id' => $payment->payment_id, 'stripe_customer_id' => null, 'price_id' => null, 'status' => 'paid', 'raw' => json_encode($payment->raw), 'updated_at' => now(), 'created_at' => now()]
+                            );
 
-                        DB::table('tenants')->where('id', $tenantId)->update(['active' => true, 'activated_at' => now()]);
-                    }
+                            DB::connection($central)->table('tenants')->where('id', $tenantId)->update(['active' => true, 'activated_at' => now()]);
+                        } else {
+                            $tenantUuid = null;
+                            if (is_string($tenantId) && preg_match('/[0-9a-fA-F\-]{36}/', $tenantId)) {
+                                $tenantUuid = $tenantId;
+                            } else {
+                                try {
+                                    $tenantUuid = DB::table('tenants')->where('id', $tenantId)->value('uuid');
+                                } catch (\Throwable $e) {
+                                    $tenantUuid = null;
+                                }
+                            }
+
+                            DB::table('tenant_subscriptions')->updateOrInsert(
+                                ['tenant_id' => $tenantId],
+                                ['tenant_uuid' => $tenantUuid, 'subscription_id' => $payment->payment_id, 'stripe_customer_id' => null, 'price_id' => null, 'status' => 'paid', 'raw' => json_encode($payment->raw), 'updated_at' => now(), 'created_at' => now()]
+                            );
+
+                            DB::table('tenants')->where('id', $tenantId)->update(['active' => true, 'activated_at' => now()]);
+                        }
                 }
                 request()->session()->flash('success', 'Retry processing finished (fallback)');
             } catch (\Exception $ex) {

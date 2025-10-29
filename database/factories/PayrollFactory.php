@@ -20,6 +20,7 @@ class PayrollFactory extends Factory
 
         return [
             'tenant_id' => null,
+            'tenant_uuid' => null,
             // create an employee for payroll
             'employee_id' => Employee::factory(),
             'period_start' => $start->format('Y-m-d'),
