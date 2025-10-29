@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
+use App\Jobs\ProcessRazorpayPayment;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use App\Jobs\ProcessRazorpayPayment;
+use Tests\TestCase;
 
 class ProcessRazorpayPaymentIntegrationTest extends TestCase
 {
@@ -14,9 +14,10 @@ class ProcessRazorpayPaymentIntegrationTest extends TestCase
     public function test_job_processes_payment_and_activates_tenant()
     {
         // Create a tenant row we'll reference via the order receipt
-    $tenantId = 1;
+        $tenantId = 1;
         DB::table('tenants')->insert([
             'id' => $tenantId,
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'name' => 'Test Tenant',
             'domain' => 'test-tenant.local',
             'created_at' => now(),
@@ -37,20 +38,25 @@ class ProcessRazorpayPaymentIntegrationTest extends TestCase
         ]);
 
         // Bind a fake Razorpay API that returns an order with receipt => tenantId
-        $fake = new class($tenantId) {
+        $fake = new class($tenantId)
+        {
             public $order;
+
             public function __construct($tenantId)
             {
-                $this->order = new class($tenantId) {
+                $this->order = new class($tenantId)
+                {
                     protected $tenantId;
+
                     public function __construct($tenantId)
                     {
                         $this->tenantId = $tenantId;
                     }
-                        public function fetch($id)
-                        {
-                            return ['id' => $id, 'receipt' => (string) $this->tenantId];
-                        }
+
+                    public function fetch($id)
+                    {
+                        return ['id' => $id, 'receipt' => (string) $this->tenantId];
+                    }
                 };
             }
         };

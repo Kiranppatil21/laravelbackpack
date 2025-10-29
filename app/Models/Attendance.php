@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Attendance extends Model
 {
+    use \App\Models\Concerns\BelongsToTenant;
     use CrudTrait;
     use HasFactory;
 
@@ -20,6 +21,7 @@ class Attendance extends Model
     // Migration created the table as `attendance` (singular).
     // Keep the model in sync with the DB.
     protected $table = 'attendance';
+
     // protected $primaryKey = 'id';
     // public $timestamps = false;
     protected $guarded = ['id'];

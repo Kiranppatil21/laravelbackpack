@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Stancl\Tenancy\Database\Models\Tenant;
-use App\Models\TenantSubscription;
 
 class BillingController
 {
@@ -36,8 +35,8 @@ class BillingController
             'metadata' => [
                 'tenant_id' => $tenant->getTenantKey(),
             ],
-            'success_url' => config('app.url') . '/admin?checkout_success=1&session_id={CHECKOUT_SESSION_ID}',
-            'cancel_url' => config('app.url') . '/admin?checkout_cancel=1',
+            'success_url' => config('app.url').'/admin?checkout_success=1&session_id={CHECKOUT_SESSION_ID}',
+            'cancel_url' => config('app.url').'/admin?checkout_cancel=1',
         ]);
 
         // Redirect administrators to the Stripe-hosted checkout page
@@ -61,7 +60,8 @@ class BillingController
                 $event = json_decode($payload);
             }
         } catch (\Exception $e) {
-            Log::error('Stripe webhook verification failed: ' . $e->getMessage());
+            Log::error('Stripe webhook verification failed: '.$e->getMessage());
+
             return response('Invalid signature', 400);
         }
 
@@ -77,12 +77,12 @@ class BillingController
             // dispatch job to process the webhook (queue driver controls execution)
             \App\Jobs\ProcessStripeEvent::dispatch($eventArray);
         } catch (\Exception $e) {
-            Log::error('Failed to dispatch ProcessStripeEvent job: ' . $e->getMessage());
+            Log::error('Failed to dispatch ProcessStripeEvent job: '.$e->getMessage());
             // As a fallback, attempt to process synchronously
             try {
                 (new \App\Jobs\ProcessStripeEvent($eventArray))->handle();
             } catch (\Exception $ex) {
-                Log::error('Fallback synchronous processing failed: ' . $ex->getMessage());
+                Log::error('Fallback synchronous processing failed: '.$ex->getMessage());
             }
         }
 

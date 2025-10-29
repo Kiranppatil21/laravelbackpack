@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
-use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -29,7 +29,7 @@ class AuthController extends Controller
 
         $token = $user->createToken('api-token')->plainTextToken;
 
-        return response()->json([ 'token' => $token, 'user' => $user ], 200);
+        return response()->json(['token' => $token, 'user' => $user], 200);
     }
 
     public function register(Request $request): JsonResponse
@@ -78,13 +78,14 @@ class AuthController extends Controller
 
         $token = $user->createToken('api-token')->plainTextToken;
 
-        return response()->json([ 'token' => $token, 'user' => $user ], 201);
+        return response()->json(['token' => $token, 'user' => $user], 201);
     }
 
     public function user(Request $request): JsonResponse
     {
         $user = $request->user();
         $user->load('roles');
+
         return response()->json($user);
     }
 

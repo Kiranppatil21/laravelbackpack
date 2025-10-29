@@ -37,7 +37,7 @@ class RazorpayResolver implements RazorpayResolverInterface
                     return new \Razorpay\Api\Api($keyId, $keySecret);
                 }
             } catch (\Throwable $t) {
-                Log::error('Failed to instantiate Razorpay Api in resolver: ' . $t->getMessage());
+                Log::error('Failed to instantiate Razorpay Api in resolver: '.$t->getMessage());
             }
         }
 

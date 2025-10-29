@@ -2,23 +2,24 @@
 
 namespace App\Jobs;
 
+use App\Models\TenantSubscription;
+use App\Services\RazorpayResolver;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Log;
-use App\Models\RazorpayPayment;
-use App\Models\TenantSubscription;
-use App\Services\RazorpayResolver;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class ProcessRazorpayPayment implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $paymentId;
+
     protected $apiInstance;
+
     public function __construct($paymentId, $apiInstance = null)
     {
         $this->paymentId = $paymentId;
@@ -66,7 +67,7 @@ class ProcessRazorpayPayment implements ShouldQueue
                     $api = $resolver->resolve();
                 } catch (\Throwable $t) {
                     // fall back to direct instantiation as last resort
-                    $api = (new RazorpayResolver())->resolve();
+                    $api = (new RazorpayResolver)->resolve();
                 }
             }
 
@@ -75,14 +76,15 @@ class ProcessRazorpayPayment implements ShouldQueue
                     $order = $api->order->fetch($payment->order_id);
                     $tenantId = is_array($order) ? ($order['receipt'] ?? null) : ($order->receipt ?? null);
                 } catch (\Exception $e) {
-                    Log::error('Failed to fetch order in ProcessRazorpayPayment: ' . $e->getMessage());
+                    Log::error('Failed to fetch order in ProcessRazorpayPayment: '.$e->getMessage());
                 }
             }
         }
 
         if (! $tenantId) {
             // nothing we can do without tenant mapping
-            Log::warning('ProcessRazorpayPayment: no tenant mapping for payment ' . $payment->payment_id);
+            Log::warning('ProcessRazorpayPayment: no tenant mapping for payment '.$payment->payment_id);
+
             return;
         }
 
@@ -110,7 +112,7 @@ class ProcessRazorpayPayment implements ShouldQueue
                 DB::table('tenants')->where('id', $tenantId)->update(['active' => true, 'activated_at' => now()]);
             }
         } catch (\Exception $e) {
-            Log::error('Failed to process Razorpay payment in job: ' . $e->getMessage());
+            Log::error('Failed to process Razorpay payment in job: '.$e->getMessage());
         }
     }
 }

@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class RazorpayEdgeCasesTest extends TestCase
 {
@@ -24,6 +24,7 @@ class RazorpayEdgeCasesTest extends TestCase
         // ensure a tenant exists with id '1' because the test fake order uses receipt '1'
         \DB::table('tenants')->insert([
             'id' => 1,
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'name' => 'Test Tenant',
             'domain' => 'test.local',
             'created_at' => now(),
@@ -31,11 +32,14 @@ class RazorpayEdgeCasesTest extends TestCase
         ]);
 
         // bind fake API so webhook processing can fetch order if needed
-        $fake = new class {
+        $fake = new class
+        {
             public $order;
+
             public function __construct()
             {
-                $this->order = new class {
+                $this->order = new class
+                {
                     public function fetch($id)
                     {
                         return ['id' => $id, 'receipt' => '1'];

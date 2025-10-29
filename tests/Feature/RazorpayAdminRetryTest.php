@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class RazorpayAdminRetryTest extends TestCase
 {
@@ -16,6 +16,7 @@ class RazorpayAdminRetryTest extends TestCase
         // seed tenant with id 1
         \DB::table('tenants')->insert([
             'id' => 1,
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'name' => 'Retry Tenant',
             'domain' => 'retry.local',
             'created_at' => now(),
@@ -36,11 +37,14 @@ class RazorpayAdminRetryTest extends TestCase
         ]);
 
         // fake the Razorpay API so order fetch returns receipt '1'
-        $fake = new class {
+        $fake = new class
+        {
             public $order;
+
             public function __construct()
             {
-                $this->order = new class {
+                $this->order = new class
+                {
                     public function fetch($id)
                     {
                         return ['id' => $id, 'receipt' => '1'];
@@ -53,7 +57,8 @@ class RazorpayAdminRetryTest extends TestCase
 
         // ensure 'role' middleware alias exists in tests (backpack/spatie middleware may not be registered in this environment)
         $this->app->bind('role', function () {
-            return new class {
+            return new class
+            {
                 public function handle($request, $next, $role = null)
                 {
                     return $next($request);
@@ -72,19 +77,19 @@ class RazorpayAdminRetryTest extends TestCase
         $this->assertDatabaseHas('tenant_subscriptions', ['tenant_id' => 1, 'subscription_id' => 'admin_pay_1']);
 
         // now call the admin retry endpoint which should increment retry_count
-    // authenticate a user so admin middleware does not redirect to login
-    $user = \App\Models\User::factory()->create();
-    // Backpack uses the 'backpack' guard by default in this app
-    $this->actingAs($user, 'backpack');
+        // authenticate a user so admin middleware does not redirect to login
+        $user = \App\Models\User::factory()->create();
+        // Backpack uses the 'backpack' guard by default in this app
+        $this->actingAs($user, 'backpack');
 
-    $response = $this->get('/admin/razorpay-payments/' . $id . '/retry');
+        $response = $this->get('/admin/razorpay-payments/'.$id.'/retry');
         $response->assertRedirect();
 
-    // inspect the row from default and sqlite connections (no debug prints)
-    $rowDefault = \DB::table('razorpay_payments')->where('id', $id)->first();
-    $rowSqlite = \DB::connection('sqlite')->table('razorpay_payments')->where('id', $id)->first();
+        // inspect the row from default and sqlite connections (no debug prints)
+        $rowDefault = \DB::table('razorpay_payments')->where('id', $id)->first();
+        $rowSqlite = \DB::connection('sqlite')->table('razorpay_payments')->where('id', $id)->first();
 
-    // assert retry_count incremented
-    $this->assertDatabaseHas('razorpay_payments', ['id' => $id, 'retry_count' => 1]);
+        // assert retry_count incremented
+        $this->assertDatabaseHas('razorpay_payments', ['id' => $id, 'retry_count' => 1]);
     }
 }

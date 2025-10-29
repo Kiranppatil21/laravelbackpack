@@ -2,9 +2,8 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
+use Tests\TestCase;
 
 class SignupProvisioningE2ETest extends TestCase
 {
@@ -13,15 +12,19 @@ class SignupProvisioningE2ETest extends TestCase
     public function test_signup_with_razorpay_then_webhook_activates_tenant()
     {
         // Bind a fake Razorpay API so the signup controller can create an order
-        $fakeApi = new class {
+        $fakeApi = new class
+        {
             public $order;
+
             public function __construct()
             {
-                $this->order = new class {
+                $this->order = new class
+                {
                     public function create($payload)
                     {
                         return ['id' => 'order_e2e_1', 'amount' => $payload['amount'] ?? 1000, 'receipt' => 1];
                     }
+
                     public function fetch($id)
                     {
                         // return the receipt that maps to the tenant id inserted in the signup flow

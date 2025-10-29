@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\SignupRequest;
-use Illuminate\Http\Request;
-use Stancl\Tenancy\Database\Models\Tenant;
-use Stancl\Tenancy\Database\Models\Domain;
+use App\Models\Domain;
+use App\Models\Tenant;
 use App\Services\RazorpayResolverInterface;
+use Illuminate\Http\Request;
 
 class SignupController extends Controller
 {
@@ -16,6 +16,7 @@ class SignupController extends Controller
     {
         $this->razorpayResolver = $razorpayResolver;
     }
+
     public function show()
     {
         return view('signup.form');
@@ -26,31 +27,30 @@ class SignupController extends Controller
         $validated = $request->validated();
         // Wrap tenant creation and Stripe calls in a transaction-like flow with cleanup on failure
         $tenant = null;
+        $tenantIntId = null;
         try {
-            // Create tenant record centrally using DB to avoid tenant model casting differences in test environments
-            $tenantId = \Illuminate\Support\Facades\DB::table('tenants')->insertGetId([
+            // Insert tenant row into central `tenants` table with UUID while
+            // keeping integer `id` untouched for FK compatibility.
+            $uuid = (string) \Illuminate\Support\Str::uuid();
+
+            // Insert and get the integer primary key for the central tenants table so
+            // domains FK remains valid in the current schema.
+            $tenantIntId = \Illuminate\Support\Facades\DB::table('tenants')->insertGetId([
+                'uuid' => $uuid,
                 'name' => $validated['name'],
                 'domain' => $validated['domain'],
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
 
-            // attempt to get a Tenant model instance for use by other code; if not possible, continue with id
-            try {
-                $tenant = Tenant::find($tenantId);
-            } catch (\Exception $e) {
-                $tenant = null;
-            }
+            // Get a Tenant model instance (stancl) by uuid so other code can use it
+            $tenant = Tenant::where('uuid', $uuid)->first();
 
-            // create domain record (stancl tenancy domains table) - non-fatal if it fails in some envs
-            try {
-                Domain::create([
-                    'domain' => $validated['domain'],
-                    'tenant_id' => $tenantId,
-                ]);
-            } catch (\Exception $e) {
-                // ignore domain creation failures here; it can be handled manually later
-            }
+            // create domain record pointing to the central tenant's integer id for now
+            Domain::create([
+                'domain' => $validated['domain'],
+                'tenant_id' => $tenantIntId,
+            ]);
 
             $priceId = $validated['price_id'] ?? env('STRIPE_PRICE_ID');
 
@@ -58,7 +58,7 @@ class SignupController extends Controller
 
             if ($gateway === 'razorpay') {
                 // create a Razorpay order and render a checkout view
-                $amount = isset($validated['amount']) ? (int)round($validated['amount'] * 100) : 0; // rupees to paise
+                $amount = isset($validated['amount']) ? (int) round($validated['amount'] * 100) : 0; // rupees to paise
                 $currency = 'INR';
 
                 // resolve Razorpay API via resolver (container-bound fakes will be preferred in tests)
@@ -70,11 +70,12 @@ class SignupController extends Controller
                 $order = $api->order->create([
                     'amount' => max(1, $amount),
                     'currency' => $currency,
-                    'receipt' => $tenantId,
+                    'receipt' => $tenant ? $tenant->getKey() : $tenantIntId,
                     'payment_capture' => 1,
                 ]);
 
                 session()->flash('success', 'Razorpay order created. Redirecting to checkout...');
+
                 return view('razorpay.checkout', ['order_id' => $order['id'], 'amount' => $order['amount'], 'currency' => $currency]);
             }
             // Stripe flow
@@ -86,7 +87,7 @@ class SignupController extends Controller
                 'email' => $validated['admin_email'],
                 'name' => $validated['admin_name'],
                 'metadata' => [
-                    'tenant_id' => $tenant ? $tenant->getKey() : $tenantId,
+                    'tenant_id' => $tenant ? $tenant->getKey() : $tenantIntId,
                 ],
             ]);
 
@@ -95,11 +96,11 @@ class SignupController extends Controller
                 'mode' => 'subscription',
                 'customer' => $customer->id,
                 'metadata' => [
-                    'tenant_id' => $tenant ? $tenant->getKey() : $tenantId,
+                    'tenant_id' => $tenant ? $tenant->getKey() : $tenantIntId,
                     'admin_email' => $validated['admin_email'],
                 ],
-                'success_url' => rtrim(config('app.url'), '/') . route('signup.success', [], false) . '?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => rtrim(config('app.url'), '/') . route('signup.show', [], false) . '?cancel=1',
+                'success_url' => rtrim(config('app.url'), '/').route('signup.success', [], false).'?session_id={CHECKOUT_SESSION_ID}',
+                'cancel_url' => rtrim(config('app.url'), '/').route('signup.show', [], false).'?cancel=1',
             ];
 
             if ($priceId) {
@@ -112,7 +113,7 @@ class SignupController extends Controller
                 $sessionParams['line_items'] = [[
                     'price_data' => [
                         'currency' => 'usd',
-                        'product_data' => ['name' => $validated['name'] . ' plan'],
+                        'product_data' => ['name' => $validated['name'].' plan'],
                         'unit_amount' => 0,
                         'recurring' => ['interval' => 'month'],
                     ],
@@ -124,15 +125,19 @@ class SignupController extends Controller
 
             // Success: flash a message and redirect to Stripe Checkout
             session()->flash('success', 'Checkout session created. Redirecting to Stripe...');
+
             return redirect($session->url);
         } catch (\Exception $e) {
             // cleanup: remove tenant and domain if we created them to avoid orphan central tenants
-            if ($tenant) {
+            if ($tenantIntId) {
                 try {
-                    Domain::where('tenant_id', $tenant->getKey())->delete();
+                    Domain::where('tenant_id', $tenantIntId)->delete();
                 } catch (\Exception $inner) {
                     // ignore
                 }
+            }
+
+            if ($tenant) {
                 try {
                     $tenant->delete();
                 } catch (\Exception $inner) {
@@ -142,7 +147,8 @@ class SignupController extends Controller
 
             // log and inform the user
             report($e);
-            session()->flash('error', 'There was an error starting the signup process: ' . $e->getMessage());
+            session()->flash('error', 'There was an error starting the signup process: '.$e->getMessage());
+
             return redirect()->back()->withInput();
         }
     }
@@ -150,6 +156,7 @@ class SignupController extends Controller
     public function success(Request $request)
     {
         $sessionId = $request->query('session_id');
+
         return view('signup.success', ['session_id' => $sessionId]);
     }
 }

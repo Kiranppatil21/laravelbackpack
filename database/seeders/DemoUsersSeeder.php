@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use App\Models\User;
 use Spatie\Permission\Models\Role;
 
 class DemoUsersSeeder extends Seeder
@@ -22,10 +22,10 @@ class DemoUsersSeeder extends Seeder
         ];
 
         foreach ($roles as $role) {
-            $email = strtolower(str_replace(' ', '_', $role)) . '@example.test';
+            $email = strtolower(str_replace(' ', '_', $role)).'@example.test';
             $user = User::firstOrCreate(
                 ['email' => $email],
-                ['name' => $role . ' Demo', 'password' => Hash::make('password')]
+                ['name' => $role.' Demo', 'password' => Hash::make('password')]
             );
             $r = Role::firstOrCreate(['name' => $role]);
             if (! $user->hasRole($role)) {

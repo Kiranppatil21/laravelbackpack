@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Backpack\CRUD\app\Http\Controllers\CrudController;
 use App\Models\RazorpayPayment;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use App\Services\RazorpayResolverInterface;
+use Backpack\CRUD\app\Http\Controllers\CrudController;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class RazorpayPaymentCrudController extends CrudController
 {
@@ -18,10 +17,11 @@ class RazorpayPaymentCrudController extends CrudController
         parent::__construct();
         $this->razorpayResolver = $razorpayResolver;
     }
+
     public function setup()
     {
         $this->crud->setModel(RazorpayPayment::class);
-        $this->crud->setRoute(config('backpack.base.route_prefix') . '/razorpay-payment');
+        $this->crud->setRoute(config('backpack.base.route_prefix').'/razorpay-payment');
         $this->crud->setEntityNameStrings('Razorpay payment', 'Razorpay payments');
     }
 
@@ -42,7 +42,6 @@ class RazorpayPaymentCrudController extends CrudController
     {
         $central = config('tenancy.database.central_connection') ?? null;
 
-
         // read payment from central DB to avoid tenant-connection confusion
         if ($central) {
             $paymentRow = DB::connection($central)->table('razorpay_payments')->where('id', $id)->first();
@@ -54,6 +53,7 @@ class RazorpayPaymentCrudController extends CrudController
 
         if (! $payment) {
             request()->session()->flash('error', 'Payment not found');
+
             return redirect()->back();
         }
 
@@ -66,9 +66,9 @@ class RazorpayPaymentCrudController extends CrudController
                 DB::table('razorpay_payments')->where('id', $payment->id)->increment('retry_count');
                 DB::table('razorpay_payments')->where('id', $payment->id)->update(['last_retry_at' => now()]);
             }
-            
+
         } catch (\Exception $e) {
-            Log::warning('Failed to write retry audit: ' . $e->getMessage());
+            Log::warning('Failed to write retry audit: '.$e->getMessage());
         }
 
         // determine tenant id (try fetching order to read receipt -> tenant id)
@@ -87,7 +87,7 @@ class RazorpayPaymentCrudController extends CrudController
                     }
                 }
             } catch (\Exception $e) {
-                Log::warning('Order fetch failed during admin retry: ' . $e->getMessage());
+                Log::warning('Order fetch failed during admin retry: '.$e->getMessage());
             }
         }
 
@@ -98,7 +98,7 @@ class RazorpayPaymentCrudController extends CrudController
             app()->call([$job, 'handle']);
             request()->session()->flash('success', 'Retry processing finished');
         } catch (\Exception $e) {
-            Log::warning('Synchronous job handle failed in retry: ' . $e->getMessage());
+            Log::warning('Synchronous job handle failed in retry: '.$e->getMessage());
             // fallback: write directly to central DB if we have a tenant mapping
             try {
                 if ($tenantId) {
@@ -120,7 +120,7 @@ class RazorpayPaymentCrudController extends CrudController
                 }
                 request()->session()->flash('success', 'Retry processing finished (fallback)');
             } catch (\Exception $ex) {
-                Log::warning('Fallback processing failed during admin retry: ' . $ex->getMessage());
+                Log::warning('Fallback processing failed during admin retry: '.$ex->getMessage());
                 request()->session()->flash('error', 'Retry failed');
             }
         }

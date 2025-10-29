@@ -11,9 +11,10 @@ class TenantScope implements Scope
     /**
      * Apply the scope to a given Eloquent query builder.
      */
-     public function apply(Builder $builder, Model $model) {
+    public function apply(Builder $builder, Model $model)
+    {
         // If tenancy is initialized (per-tenant database), do not add a tenant_id WHERE
-        if (function_exists('tenancy') && tenancy()->initialized()) {
+        if (function_exists('tenancy') && tenancy()->initialized) {
             return;
         }
 

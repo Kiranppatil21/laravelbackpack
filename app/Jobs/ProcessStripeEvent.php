@@ -2,14 +2,14 @@
 
 namespace App\Jobs;
 
+use App\Models\TenantSubscription;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Models\TenantSubscription;
 use Stancl\Tenancy\Database\Models\Tenant;
 
 class ProcessStripeEvent implements ShouldQueue
@@ -37,7 +37,8 @@ class ProcessStripeEvent implements ShouldQueue
                 ]);
             } catch (\Exception $e) {
                 // likely duplicate key, so this event was already processed
-                Log::info('Duplicate Stripe event ignored: ' . $eventId);
+                Log::info('Duplicate Stripe event ignored: '.$eventId);
+
                 return;
             }
         }
@@ -75,7 +76,7 @@ class ProcessStripeEvent implements ShouldQueue
                     try {
                         DB::table('tenants')->where('id', $foundTenantId)->update(['active' => true, 'activated_at' => now()]);
                     } catch (\Exception $e) {
-                        Log::error('Failed to mark tenant active: ' . $e->getMessage());
+                        Log::error('Failed to mark tenant active: '.$e->getMessage());
                     }
                 }
 
@@ -116,7 +117,7 @@ class ProcessStripeEvent implements ShouldQueue
                             DB::table('tenants')->where('id', $tenantIdToUse)->update(['active' => true, 'activated_at' => now()]);
                         }
                     } catch (\Exception $e) {
-                        Log::error('Failed to update tenant activation status: ' . $e->getMessage());
+                        Log::error('Failed to update tenant activation status: '.$e->getMessage());
                     }
                 }
 
@@ -140,7 +141,7 @@ class ProcessStripeEvent implements ShouldQueue
                                     }
                                 }
                             } catch (\Exception $e) {
-                                Log::error('Failed to mark tenant active on invoice payment: ' . $e->getMessage());
+                                Log::error('Failed to mark tenant active on invoice payment: '.$e->getMessage());
                             }
                         } else {
                             $rec->update(['raw' => $invoice]);
@@ -150,7 +151,7 @@ class ProcessStripeEvent implements ShouldQueue
                 break;
 
             default:
-                Log::debug('Unhandled Stripe webhook event in job: ' . ($type ?? 'unknown'));
+                Log::debug('Unhandled Stripe webhook event in job: '.($type ?? 'unknown'));
         }
     }
 }

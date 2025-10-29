@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Agency extends Model
 {
+    use \App\Models\Concerns\BelongsToTenant;
     use CrudTrait;
     use HasFactory;
 
@@ -18,6 +19,7 @@ class Agency extends Model
     */
 
     protected $table = 'agencies';
+
     // protected $primaryKey = 'id';
     // public $timestamps = false;
     protected $guarded = ['id'];

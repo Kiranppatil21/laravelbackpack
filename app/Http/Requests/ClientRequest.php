@@ -26,7 +26,7 @@ class ClientRequest extends FormRequest
     {
         return [
             'name' => 'required|min:2|max:255',
-            'email' => 'required|email|unique:clients,email,' . $this->id,
+            'email' => 'required|email|unique:clients,email,'.$this->id,
             // Add more as needed
         ];
     }

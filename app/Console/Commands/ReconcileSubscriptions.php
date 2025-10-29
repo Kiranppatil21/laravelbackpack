@@ -2,8 +2,8 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
 use App\Models\TenantSubscription;
+use Illuminate\Console\Command;
 use Stancl\Tenancy\Database\Models\Tenant;
 
 class ReconcileSubscriptions extends Command
@@ -81,6 +81,7 @@ class ReconcileSubscriptions extends Command
         }
 
         $this->info('Reconciliation finished.');
+
         return 0;
     }
 }

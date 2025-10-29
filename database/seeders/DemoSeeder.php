@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
+use Carbon\Carbon;
+use Faker\Factory as Faker;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Faker\Factory as Faker;
-use Carbon\Carbon;
 
 class DemoSeeder extends Seeder
 {
@@ -31,7 +31,7 @@ class DemoSeeder extends Seeder
             for ($i = 0; $i < 5; $i++) {
                 $agencyIds[] = DB::table('agencies')->insertGetId([
                     'name' => $faker->company,
-                    'details' => $faker->address . "\nPhone: " . $faker->phoneNumber,
+                    'details' => $faker->address."\nPhone: ".$faker->phoneNumber,
                     'created_at' => Carbon::now(),
                     'updated_at' => Carbon::now(),
                 ]);
@@ -77,8 +77,8 @@ class DemoSeeder extends Seeder
                     'employee_id' => $emp,
                     'date' => $date,
                     'status' => $faker->randomElement(['present', 'absent', 'leave']),
-                    'check_in' => $faker->optional(0.9)->dateTimeBetween($date . ' 07:00', $date . ' 10:00'),
-                    'check_out' => $faker->optional(0.8)->dateTimeBetween($date . ' 15:00', $date . ' 19:00'),
+                    'check_in' => $faker->optional(0.9)->dateTimeBetween($date.' 07:00', $date.' 10:00'),
+                    'check_out' => $faker->optional(0.8)->dateTimeBetween($date.' 15:00', $date.' 19:00'),
                     'notes' => $faker->optional()->sentence,
                     'created_at' => Carbon::now(),
                     'updated_at' => Carbon::now(),

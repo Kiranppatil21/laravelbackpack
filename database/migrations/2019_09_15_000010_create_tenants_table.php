@@ -10,8 +10,6 @@ class CreateTenantsTable extends Migration
 {
     /**
      * Run the migrations.
-     *
-     * @return void
      */
     public function up(): void
     {
@@ -20,14 +18,12 @@ class CreateTenantsTable extends Migration
             $table->string('name');
             $table->string('domain')->unique();
             $table->timestamps();
-       });
+        });
 
     }
 
     /**
      * Reverse the migrations.
-     *
-     * @return void
      */
     public function down(): void
     {

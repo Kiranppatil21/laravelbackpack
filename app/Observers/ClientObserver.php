@@ -16,7 +16,6 @@ class ClientObserver
         }
     }
 
-
     /**
      * Handle the Client "updated" event.
      */

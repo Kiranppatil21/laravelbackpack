@@ -13,7 +13,7 @@ class AgencyFactory extends Factory
     {
         return [
             'name' => $this->faker->company,
-            'details' => $this->faker->address . "\nPhone: " . $this->faker->phoneNumber,
+            'details' => $this->faker->address."\nPhone: ".$this->faker->phoneNumber,
             'created_at' => now(),
             'updated_at' => now(),
         ];

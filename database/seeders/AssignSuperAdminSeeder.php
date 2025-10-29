@@ -30,6 +30,7 @@ class AssignSuperAdminSeeder extends Seeder
 
         if (! $user) {
             $this->command->info('No user found to assign Super Admin role.');
+
             return;
         }
 
