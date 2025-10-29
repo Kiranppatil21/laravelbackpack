@@ -17,6 +17,7 @@ class ProcessRazorpayPaymentIntegrationTest extends TestCase
     $tenantId = 1;
         DB::table('tenants')->insert([
             'id' => $tenantId,
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'name' => 'Test Tenant',
             'domain' => 'test-tenant.local',
             'created_at' => now(),

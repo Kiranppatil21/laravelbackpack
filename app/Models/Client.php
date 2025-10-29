@@ -10,6 +10,7 @@ class Client extends Model
 {
     use CrudTrait;
     use HasFactory;
+    use \App\Models\Concerns\BelongsToTenant;
 
     /**
      * The attributes that are mass assignable.

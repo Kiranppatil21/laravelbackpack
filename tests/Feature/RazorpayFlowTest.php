@@ -57,6 +57,7 @@ class RazorpayFlowTest extends TestCase
 
         // create tenant
         $tenantId = \Illuminate\Support\Facades\DB::table('tenants')->insertGetId([
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'name' => 'RZFlow',
             'domain' => 'rzflow.test',
             'created_at' => now(),

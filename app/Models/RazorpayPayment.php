@@ -14,4 +14,6 @@ class RazorpayPayment extends Model
         'raw' => 'array',
         'last_retry_at' => 'datetime',
     ];
+
+    use \App\Models\Concerns\BelongsToTenant;
 }

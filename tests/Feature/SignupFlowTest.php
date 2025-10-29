@@ -71,12 +71,13 @@ class SignupFlowTest extends TestCase
         Config::set('queue.default', 'sync');
 
         // create a tenant via DB (simulate pre-signup state)
-        $tenantId = \Illuminate\Support\Facades\DB::table('tenants')->insertGetId([
-            'name' => 'FlowTenant',
-            'domain' => 'flow.test',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+            $tenantId = \Illuminate\Support\Facades\DB::table('tenants')->insertGetId([
+                'uuid' => (string) \Illuminate\Support\Str::uuid(),
+                'name' => 'FlowTenant',
+                'domain' => 'flow.test',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
 
         $tenant = Tenant::find($tenantId);
 

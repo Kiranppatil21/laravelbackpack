@@ -13,7 +13,7 @@ class TenantScope implements Scope
      */
      public function apply(Builder $builder, Model $model) {
         // If tenancy is initialized (per-tenant database), do not add a tenant_id WHERE
-        if (function_exists('tenancy') && tenancy()->initialized()) {
+        if (function_exists('tenancy') && tenancy()->initialized) {
             return;
         }
 

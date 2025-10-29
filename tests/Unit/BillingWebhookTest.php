@@ -17,6 +17,7 @@ class BillingWebhookTest extends TestCase
         \Illuminate\Support\Facades\Config::set('queue.default', 'sync');
         // create a tenant row directly (avoid Tenant model casting differences in tests)
         $tenantId = \Illuminate\Support\Facades\DB::table('tenants')->insertGetId([
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'name' => 'TestTenant',
             'domain' => 'testtenant.local',
             'created_at' => now(),
@@ -54,6 +55,7 @@ class BillingWebhookTest extends TestCase
     {
         \Illuminate\Support\Facades\Config::set('queue.default', 'sync');
         $tenantId = \Illuminate\Support\Facades\DB::table('tenants')->insertGetId([
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'name' => 'T2',
             'domain' => 't2.local',
             'created_at' => now(),

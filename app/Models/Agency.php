@@ -10,6 +10,7 @@ class Agency extends Model
 {
     use CrudTrait;
     use HasFactory;
+    use \App\Models\Concerns\BelongsToTenant;
 
     /*
     |--------------------------------------------------------------------------

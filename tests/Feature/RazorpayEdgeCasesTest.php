@@ -24,6 +24,7 @@ class RazorpayEdgeCasesTest extends TestCase
         // ensure a tenant exists with id '1' because the test fake order uses receipt '1'
         \DB::table('tenants')->insert([
             'id' => 1,
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'name' => 'Test Tenant',
             'domain' => 'test.local',
             'created_at' => now(),

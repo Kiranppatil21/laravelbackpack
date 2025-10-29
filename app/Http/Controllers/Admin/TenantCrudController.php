@@ -13,6 +13,9 @@ use App\Http\Requests\TenantRequest;
 use Stancl\Tenancy\Database\Models\Tenant;
 use Stancl\Tenancy\Database\Models\Domain;
 use App\Models\TenantSubscription;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class TenantCrudController extends CrudController
 {
@@ -75,6 +78,8 @@ class TenantCrudController extends CrudController
             'name' => 'created_at',
             'label' => 'Created',
         ]);
+        // add an Activate button per-row (Backpack button view will render a link/form)
+        $this->crud->addButtonFromView('line', 'activate', 'tenant_activate_button', 'beginning');
     }
 
     protected function setupShowOperation(): void
@@ -168,5 +173,25 @@ class TenantCrudController extends CrudController
         }
 
         return $response;
+    }
+
+    /**
+     * Activate a tenant as an admin.
+     * Sets the `active` flag and `activated_at` timestamp.
+     */
+    public function activate(Request $request, Tenant $tenant): RedirectResponse
+    {
+        $tenantId = $tenant->getTenantKey();
+
+        // Use direct DB update to avoid differences between Stancl\Tenancy Tenant model
+        // and our central tenants table schema in tests/environments.
+        \Illuminate\Support\Facades\DB::table('tenants')->where('id', $tenantId)->update([
+            'active' => true,
+            'activated_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
+        ]);
+
+        // Redirect back to the tenant list with a success message
+        return redirect(backpack_url('tenant'))->with('status', 'Tenant activated.');
     }
 }

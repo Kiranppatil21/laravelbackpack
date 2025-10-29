@@ -57,3 +57,8 @@ Route::post('/razorpay/webhook', [RazorpayController::class, 'webhook'])
 Route::get('/signup', [SignupController::class, 'show'])->name('signup.show');
 Route::post('/signup', [SignupController::class, 'store'])->name('signup.store');
 Route::get('/signup/success', [SignupController::class, 'success'])->name('signup.success');
+
+// Admin routes: tenant activation (Backpack admin prefix)
+Route::match(['get','post'], config('backpack.base.route_prefix').'/tenant/{tenant}/activate', [\App\Http\Controllers\Admin\TenantCrudController::class, 'activate'])
+    ->name('admin.tenant.activate')
+    ->middleware(['web', 'admin']);

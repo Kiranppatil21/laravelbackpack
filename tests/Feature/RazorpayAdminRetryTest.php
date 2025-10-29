@@ -16,6 +16,7 @@ class RazorpayAdminRetryTest extends TestCase
         // seed tenant with id 1
         \DB::table('tenants')->insert([
             'id' => 1,
+            'uuid' => (string) \Illuminate\Support\Str::uuid(),
             'name' => 'Retry Tenant',
             'domain' => 'retry.local',
             'created_at' => now(),
