@@ -95,7 +95,7 @@ class SignupFlowTest extends TestCase
             'data' => [
                 'object' => [
                     'id' => 'cs_fake_1',
-                    'metadata' => ['tenant_id' => $tenant->getKey()],
+                    'metadata' => ['tenant_id' => $tenant->getKey(), 'tenant_uuid' => $tenant->uuid],
                     'subscription' => 'sub_fake_1',
                     'customer' => 'cus_fake_1',
                 ],

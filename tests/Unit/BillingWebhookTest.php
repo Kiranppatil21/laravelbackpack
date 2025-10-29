@@ -33,6 +33,7 @@ class BillingWebhookTest extends TestCase
                     'id' => 'cs_test_123',
                     'metadata' => [
                         'tenant_id' => $tenant->getKey(),
+                        'tenant_uuid' => $tenant->uuid,
                     ],
                     'subscription' => 'sub_test_123',
                     'customer' => 'cus_test_123',
@@ -64,6 +65,7 @@ class BillingWebhookTest extends TestCase
         $tenant = Tenant::find($tenantId);
         TenantSubscription::create([
             'tenant_id' => $tenant->getKey(),
+            'tenant_uuid' => $tenant->uuid,
             'subscription_id' => 'sub_abc',
             'stripe_customer_id' => 'cus_old',
             'status' => 'trialing',

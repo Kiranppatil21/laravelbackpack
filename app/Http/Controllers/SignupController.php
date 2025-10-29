@@ -89,6 +89,7 @@ class SignupController extends Controller
                 'name' => $validated['admin_name'],
                 'metadata' => [
                     'tenant_id' => $tenant ? $tenant->getKey() : $tenantIntId,
+                    'tenant_uuid' => $uuid,
                 ],
             ]);
 
@@ -98,6 +99,7 @@ class SignupController extends Controller
                 'customer' => $customer->id,
                 'metadata' => [
                     'tenant_id' => $tenant ? $tenant->getKey() : $tenantIntId,
+                    'tenant_uuid' => $uuid,
                     'admin_email' => $validated['admin_email'],
                 ],
                 'success_url' => rtrim(config('app.url'), '/').route('signup.success', [], false).'?session_id={CHECKOUT_SESSION_ID}',

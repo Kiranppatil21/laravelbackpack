@@ -37,6 +37,15 @@ class Agency extends Model
     | RELATIONS
     |--------------------------------------------------------------------------
     */
+    public function clients()
+    {
+        return $this->hasMany(Client::class, 'agency_id');
+    }
+
+    public function employees()
+    {
+        return $this->hasMany(Employee::class, 'agency_id');
+    }
 
     /*
     |--------------------------------------------------------------------------

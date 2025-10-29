@@ -26,5 +26,16 @@ class Client extends Model
         'email',
         'tenant_id',
         'tenant_uuid',
+        'agency_id',
     ];
+
+    public function agency()
+    {
+        return $this->belongsTo(Agency::class, 'agency_id');
+    }
+
+    public function employees()
+    {
+        return $this->hasMany(Employee::class, 'client_id');
+    }
 }

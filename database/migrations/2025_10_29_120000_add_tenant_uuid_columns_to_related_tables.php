@@ -18,6 +18,7 @@ return new class extends Migration
             'invoices',
             'tenant_subscriptions',
             'razorpay_payments',
+            'domains',
         ];
 
         foreach ($tables as $table) {
@@ -62,6 +63,7 @@ return new class extends Migration
             'invoices',
             'tenant_subscriptions',
             'razorpay_payments',
+            'domains',
         ];
 
         foreach ($tables as $table) {

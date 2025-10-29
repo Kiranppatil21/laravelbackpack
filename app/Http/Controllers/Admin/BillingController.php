@@ -17,13 +17,24 @@ class BillingController
         if (! $tenant) {
             return response()->json(['message' => 'Tenant not found'], 404);
         }
-
-    $priceId = $request->input('price_id') ?: config('services.stripe.price_id');
+        $priceId = $request->input('price_id') ?: config('services.stripe.price_id');
         if (! $priceId) {
             return response()->json(['message' => 'No price_id provided and STRIPE_PRICE_ID not set'], 400);
         }
+        // compute tenant_uuid defensively so we send both identifiers to Stripe
+        $tenantKey = $tenant->getTenantKey();
+        $tenantUuid = null;
+        if (is_string($tenantKey) && preg_match('/[0-9a-fA-F\-]{36}/', $tenantKey)) {
+            $tenantUuid = $tenantKey;
+        } elseif (is_numeric($tenantKey)) {
+            try {
+                $tenantUuid = \Illuminate\Support\Facades\DB::table('tenants')->where('id', $tenantKey)->value('uuid');
+            } catch (\Throwable $e) {
+                $tenantUuid = null;
+            }
+        }
 
-    $stripe = new \Stripe\StripeClient(config('services.stripe.secret'));
+        $stripe = new \Stripe\StripeClient(config('services.stripe.secret'));
 
         $session = $stripe->checkout->sessions->create([
             'payment_method_types' => ['card'],
@@ -33,7 +44,8 @@ class BillingController
                 'quantity' => 1,
             ]],
             'metadata' => [
-                'tenant_id' => $tenant->getTenantKey(),
+                'tenant_id' => $tenantKey,
+                'tenant_uuid' => $tenantUuid,
             ],
             'success_url' => config('app.url').'/admin?checkout_success=1&session_id={CHECKOUT_SESSION_ID}',
             'cancel_url' => config('app.url').'/admin?checkout_cancel=1',
