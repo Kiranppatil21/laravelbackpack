@@ -19,5 +19,13 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        // Run demo data by default for local/dev environments
+        if (class_exists(\Database\Seeders\DemoSeeder::class) || class_exists(\Database\Seeders\DemoUsersSeeder::class)) {
+            $this->call(\Database\Seeders\DemoSeeder::class);
+        }
+        $this->call([
+            \Database\Seeders\DemoUsersSeeder::class,
+        ]);
     }
 }

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+  <style>
+    .box { fill: #ffffff; stroke: #2b6cb0; stroke-width:2; rx:6; }
+    .title { font: bold 14px sans-serif; fill: #2b6cb0; }
+    .field { font: 12px monospace; fill: #1a202c; }
+    .rel { stroke: #718096; stroke-width:2; marker-end: url(#arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#718096" />
+    </marker>
+  </defs>
+
+  <!-- Central / Tenancy -->
+  <g transform="translate(40,40)">
+    <rect class="box" x="0" y="0" width="240" height="100" />
+    <text class="title" x="12" y="24">tenants (central)</text>
+    <text class="field" x="12" y="48">id</text>
+    <text class="field" x="12" y="64">domain</text>
+    <text class="field" x="12" y="80">active</text>
+  </g>
+
+  <g transform="translate(320,40)">
+    <rect class="box" x="0" y="0" width="260" height="100" />
+    <text class="title" x="12" y="24">tenant_subscriptions (central)</text>
+    <text class="field" x="12" y="48">id</text>
+    <text class="field" x="12" y="64">tenant_id → tenants.id</text>
+    <text class="field" x="12" y="80">subscription_id</text>
+  </g>
+
+  <g transform="translate(660,40)">
+    <rect class="box" x="0" y="0" width="260" height="100" />
+    <text class="title" x="12" y="24">razorpay_payments (central)</text>
+    <text class="field" x="12" y="48">id</text>
+    <text class="field" x="12" y="64">payment_id</text>
+    <text class="field" x="12" y="80">order_id, tenant_id</text>
+  </g>
+
+  <!-- Tenant DB entities -->
+  <g transform="translate(40,200)">
+    <rect class="box" x="0" y="0" width="300" height="120" />
+    <text class="title" x="12" y="24">agencies</text>
+    <text class="field" x="12" y="48">id</text>
+    <text class="field" x="12" y="64">name</text>
+    <text class="field" x="12" y="80">domain</text>
+  </g>
+
+  <g transform="translate(380,200)">
+    <rect class="box" x="0" y="0" width="320" height="140" />
+    <text class="title" x="12" y="24">clients</text>
+    <text class="field" x="12" y="48">id</text>
+    <text class="field" x="12" y="64">agency_id → agencies.id</text>
+    <text class="field" x="12" y="80">name</text>
+    <text class="field" x="12" y="96">contact</text>
+  </g>
+
+  <g transform="translate(740,200)">
+    <rect class="box" x="0" y="0" width="360" height="160" />
+    <text class="title" x="12" y="24">employees</text>
+    <text class="field" x="12" y="48">id</text>
+    <text class="field" x="12" y="64">agency_id → agencies.id</text>
+    <text class="field" x="12" y="80">first_name, last_name</text>
+    <text class="field" x="12" y="96">role</text>
+    <text class="field" x="12" y="112">tenant_id (implicit)</text>
+  </g>
+
+  <g transform="translate(40,380)">
+    <rect class="box" x="0" y="0" width="320" height="120" />
+    <text class="title" x="12" y="24">attendance</text>
+    <text class="field" x="12" y="48">id</text>
+    <text class="field" x="12" y="64">employee_id → employees.id</text>
+    <text class="field" x="12" y="80">date, status</text>
+  </g>
+
+  <g transform="translate(400,380)">
+    <rect class="box" x="0" y="0" width="320" height="120" />
+    <text class="title" x="12" y="24">payrolls</text>
+    <text class="field" x="12" y="48">id</text>
+    <text class="field" x="12" y="64">employee_id → employees.id</text>
+    <text class="field" x="12" y="80">period, amount</text>
+  </g>
+
+  <g transform="translate(760,420)">
+    <rect class="box" x="0" y="0" width="320" height="120" />
+    <text class="title" x="12" y="24">invoices</text>
+    <text class="field" x="12" y="48">id</text>
+    <text class="field" x="12" y="64">client_id → clients.id</text>
+    <text class="field" x="12" y="80">amount, due_date</text>
+  </g>
+
+  <!-- Relationships arrows -->
+  <line x1="220" y1="90" x2="300" y2="120" class="rel" />
+  <line x1="580" y1="90" x2="660" y2="120" class="rel" />
+
+  <!-- Agency -> Clients -->
+  <line x1="340" y1="260" x2="380" y2="260" class="rel" />
+  <text x="360" y="252" font-family="sans-serif" font-size="12" fill="#2d3748">1..*</text>
+
+  <!-- Agency -> Employees -->
+  <line x1="640" y1="260" x2="740" y2="260" class="rel" />
+  <text x="690" y="252" font-family="sans-serif" font-size="12" fill="#2d3748">1..*</text>
+
+  <!-- Employee -> Attendance / Payroll -->
+  <line x1="520" y1="420" x2="400" y2="420" class="rel" />
+  <line x1="640" y1="420" x2="520" y2="420" class="rel" />
+
+  <!-- Client -> Invoices -->
+  <line x1="500" y1="320" x2="820" y2="460" class="rel" />
+  <text x="650" y="390" font-family="sans-serif" font-size="12" fill="#2d3748">1..*</text>
+
+  <!-- Tenant subscription relation -->
+  <line x1="240" y1="90" x2="320" y2="90" class="rel" />
+  <text x="270" y="82" font-family="sans-serif" font-size="12" fill="#2d3748">1..*</text>
+
+  <text x="18" y="760" font-family="sans-serif" font-size="12" fill="#4a5568">Generated ERD (text/visual) — central tables are in the central DB; tenant tables live per-tenant.</text>
+</svg>

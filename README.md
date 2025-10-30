@@ -49,6 +49,39 @@ We would like to extend our thanks to the following sponsors for funding Laravel
 
 Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
 
+Developer notes — testing billing flows locally
+------------------------------------------------
+If you want to run the end-to-end signup → billing → webhook activation flow locally (without calling real Razorpay/Stripe), you can bind fakes into the container.
+
+Example: bind a fake Razorpay SDK in a test or `php artisan tinker`:
+
+```php
+// in a test
+$fake = new class {
+	public $order;
+	public function __construct()
+	{
+		$this->order = new class {
+			public function create($payload) { return ['id' => 'order_test_1', 'amount' => $payload['amount']]; }
+			public function fetch($id) { return ['id' => $id, 'receipt' => '1']; }
+		};
+	}
+};
+app()->instance('\\Razorpay\\Api\\Api', $fake);
+```
+
+For Stripe, bind a fake `\\Stripe\\StripeClient` implementation (or a minimal stub) to `Stripe\\StripeClient::class` so the signup controller and checkout creation code can run in tests.
+
+Running the end-to-end test locally:
+
+```bash
+php artisan test --filter SignupProvisioningE2ETest
+```
+
+Notes
+- `RazorpayResolver` prefers container-bound instances, so binding the SDK under `Razorpay\\Api\\Api` will be picked up by the resolver during tests.
+- In CI, ensure the appropriate env vars are set or tests bind fakes for external SDKs.
+
 ## Code of Conduct
 
 In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
@@ -60,3 +93,51 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Phase 1 — Project setup & ERD (status)
+
+This repository implements the backend foundations for the Phase 1 plan. Below is a short checklist and current status.
+
+- Laravel 12 backend: Present (see `composer.json`).
+- React frontend: Not scaffolded yet — not present in `package.json`.
+- Database migrations: Present for Agencies, Clients, Employees, Attendance, Payroll, Invoices (see `database/migrations` and `database/migrations/tenant`).
+- Auth scaffolding (Breeze/Jetstream): Not installed (you can install Breeze to scaffold a React frontend with auth).
+- Tailwind: Present in `package.json` devDependencies.
+- Roles: Spatie permission included; `RoleSeeder` seeds `Super Admin` and `Agency Owner` plus additional roles (HR, Client, Guard/Employee, Visitor, Police).
+
+## Cypress end-to-end tests
+
+For details on running the Cypress end-to-end tests, stable test selectors used in the app, fixtures, and helper scripts, see `docs/CYPRESS.md`.
+
+Run the primary employee-create spec locally with:
+
+```bash
+npx cypress run --spec "cypress/e2e/employee_create.cy.js"
+```
+
+Simple ERD (text-based)
+
+Tenants/Central vs Tenant DBs
+
+Central DB tables:
+- tenants (id)
+- tenant_subscriptions (tenant_id)
+- razorpay_payments
+
+Tenant DB (per-tenant) tables (examples):
+- agencies (id)
+- clients (id, agency_id)
+- employees (id, agency_id)
+- attendance (employee_id)
+- payrolls (employee_id)
+- invoices (client_id)
+
+Relationships (high level):
+- Agency 1---* Client
+- Agency 1---* Employee
+- Employee 1---* Attendance
+- Employee 1---* Payroll
+- Client 1---* Invoice
+- Tenant 1---* TenantSubscription
+
+If you want, I can add a visual ERD (SVG/PNG) under `docs/erd.png` or generate a dbdiagram.io link.

@@ -11,8 +11,10 @@ class AssignSuperAdminSeeder extends Seeder
      */
     public function run(): void
     {
-        $email = env('SUPER_ADMIN_EMAIL');
-        $id = env('SUPER_ADMIN_ID');
+    // Prefer config() so env() isn't called outside config files (phpstan rule).
+    // Tests or deploys can set these via config('super_admin.email') / config('super_admin.id') when needed.
+    $email = config('super_admin.email');
+    $id = config('super_admin.id');
 
         $user = null;
 
@@ -30,6 +32,7 @@ class AssignSuperAdminSeeder extends Seeder
 
         if (! $user) {
             $this->command->info('No user found to assign Super Admin role.');
+
             return;
         }
 

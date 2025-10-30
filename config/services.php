@@ -35,4 +35,19 @@ return [
         ],
     ],
 
+        // Stripe / Razorpay service credentials used by the app.
+        // Keep env() here so credentials are centralized in config files (phpstan-friendly).
+        'stripe' => [
+            'secret' => env('STRIPE_SECRET'),
+            'public' => env('STRIPE_PUBLIC'),
+            'price_id' => env('STRIPE_PRICE_ID'),
+            'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+        ],
+
+        'razorpay' => [
+            'key_id' => env('RAZORPAY_KEY_ID'),
+            'key_secret' => env('RAZORPAY_KEY_SECRET'),
+            'webhook_secret' => env('RAZORPAY_WEBHOOK_SECRET'),
+        ],
+
 ];

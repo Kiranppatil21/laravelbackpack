@@ -17,6 +17,12 @@
     @php $allowed = config('backpack-permissions.sidebar_allowed_roles', ['Super Admin']); @endphp
     @if (method_exists(backpack_user(), 'hasAnyRole') && backpack_user()->hasAnyRole($allowed))
             <li class="nav-item">
+                <a class="nav-link" href="{{ backpack_url('tenant') }}">
+                    <i class="nav-icon la la-building"></i>
+                    <p>Tenants</p>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link" href="{{ backpack_url('role') }}">
                     <i class="nav-icon la la-user-shield"></i>
                     <p>Roles</p>

@@ -17,7 +17,7 @@ class PermissionsSmokeTest extends TestCase
     {
         // Run only the Spatie permissions migration file via Artisan --path to avoid unrelated migrations
         $path = 'database/migrations/2025_10_21_045714_create_permission_tables.php';
-        $this->assertFileExists(base_path($path), 'Permissions migration file not found: ' . base_path($path));
+        $this->assertFileExists(base_path($path), 'Permissions migration file not found: '.base_path($path));
 
         $migrate = Artisan::call('migrate', ['--path' => $path, '--force' => true]);
         $this->assertEquals(0, $migrate, 'Permissions migration did not complete successfully');
