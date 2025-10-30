@@ -1,0 +1,56 @@
+name: "Run staging migration (manual)"
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy to staging'
+        required: true
+        default: 'chore/tenant-uuid-indexes'
+
+jobs:
+  run-migration:
+    name: Run migration on staging host
+    runs-on: ubuntu-latest
+    # Use a protected environment named `staging` so organizations can require manual approval
+    environment: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run migration on remote staging host via SSH
+        uses: appleboy/ssh-action@v0.1.9
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.STAGING_SSH_PORT }}
+          script: |
+            set -e
+            echo "Deploying branch: ${{ github.event.inputs.branch }} to staging host"
+            cd $STAGING_PATH
+            # Ensure working tree is clean and checkout the branch
+            git fetch origin
+            git checkout ${{ github.event.inputs.branch }}
+            git reset --hard origin/${{ github.event.inputs.branch }}
+            git pull origin ${{ github.event.inputs.branch }}
+
+            # Install composer dependencies and run migrations
+            composer install --no-dev --optimize-autoloader
+
+            # Optional: build assets if your staging host requires it
+            if [ -f package.json ]; then
+              npm ci --prefer-offline
+              npm run build || true
+            fi
+
+            php artisan migrate --force
+            php artisan tenant:verify-uuids
+
+# Required secrets (set these in the repository or organization settings before running):
+# - STAGING_SSH_HOST: staging host IP or hostname
+# - STAGING_SSH_USER: ssh username
+# - STAGING_SSH_PRIVATE_KEY: private key for SSH (no passphrase) or use SSH agent action
+# - STAGING_PATH: full path to the project on the staging host (exported as an env var on the host or set as a secret)
+# - STAGING_SSH_PORT (optional): SSH port (default 22)
