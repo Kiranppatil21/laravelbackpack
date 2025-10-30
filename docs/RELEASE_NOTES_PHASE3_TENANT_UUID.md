@@ -41,7 +41,8 @@ Verification & artifacts
 ------------------------
 The following verification and artifacts were produced during rollout. Replace the placeholders below with the real URLs/paths before merging the PR.
 
-- Staging workflow run (migration + smoke tests): {{STAGING_RUN_URL}}
+- Staging workflow run (migration + smoke tests): https://github.com/Kiranppatil21/laravelbackpack/actions/runs/18939307103
+- PR and release notes: https://github.com/Kiranppatil21/laravelbackpack/pull/7
 - Production workflow run (canary): {{PRODUCTION_RUN_URL}}
 - Cypress artifacts (screenshots/videos) attached to the staging run: {{CYPRESS_ARTIFACTS_URL}}
 - Production DB backup location and checksum: {{BACKUP_LOCATION}} (checksum: {{BACKUP_CHECKSUM}})
