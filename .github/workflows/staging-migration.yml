@@ -29,7 +29,7 @@ jobs:
           script: |
             set -e
             echo "Deploying branch: ${{ github.event.inputs.branch }} to staging host"
-            cd $STAGING_PATH
+            cd ${{ secrets.STAGING_PATH }}
             # Ensure working tree is clean and checkout the branch
             git fetch origin
             git checkout ${{ github.event.inputs.branch }}
