@@ -14,6 +14,34 @@ class ClientController extends Controller
     {
         $user = $request->user();
 
+        // Support simple search for typeahead: /api/clients?q=term
+        $q = $request->query('q');
+
+        if ($q) {
+            $query = Client::query();
+
+            if (!(method_exists($user, 'hasRole') && $user->hasRole('super-admin'))) {
+                $query->where('tenant_id', $user->tenant_id);
+            }
+
+            // Use ILIKE on postgres for case-insensitive search, else use LIKE.
+            // Search name and email (and future fields) to support typeahead.
+            $driver = config('database.connections.' . config('database.default') . '.driver');
+            if ($driver === 'pgsql') {
+                $items = $query->where(function ($sub) use ($q) {
+                    $sub->whereRaw('name ILIKE ?', ["%{$q}%"]) 
+                        ->orWhereRaw('email ILIKE ?', ["%{$q}%"]);
+                })->limit(20)->get();
+            } else {
+                $items = $query->where(function ($sub) use ($q) {
+                    $sub->where('name', 'like', "%{$q}%")
+                        ->orWhere('email', 'like', "%{$q}%");
+                })->limit(20)->get();
+            }
+
+            return response()->json($items);
+        }
+
         if (method_exists($user, 'hasRole') && $user->hasRole('super-admin')) {
             $items = Client::with('agency')->paginate(20);
         } else {

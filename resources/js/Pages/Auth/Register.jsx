@@ -32,6 +32,7 @@ export default function Register() {
                     <TextInput
                         id="name"
                         name="name"
+                        data-cy="auth-name"
                         value={data.name}
                         className="mt-1 block w-full"
                         autoComplete="name"
@@ -50,6 +51,7 @@ export default function Register() {
                         id="email"
                         type="email"
                         name="email"
+                        data-cy="auth-email"
                         value={data.email}
                         className="mt-1 block w-full"
                         autoComplete="username"
@@ -67,6 +69,7 @@ export default function Register() {
                         id="password"
                         type="password"
                         name="password"
+                        data-cy="auth-password"
                         value={data.password}
                         className="mt-1 block w-full"
                         autoComplete="new-password"
@@ -87,6 +90,7 @@ export default function Register() {
                         id="password_confirmation"
                         type="password"
                         name="password_confirmation"
+                        data-cy="auth-password-confirmation"
                         value={data.password_confirmation}
                         className="mt-1 block w-full"
                         autoComplete="new-password"
@@ -110,7 +114,7 @@ export default function Register() {
                         Already registered?
                     </Link>
 
-                    <PrimaryButton className="ms-4" disabled={processing}>
+                    <PrimaryButton data-cy="auth-register-submit" className="ms-4" disabled={processing}>
                         Register
                     </PrimaryButton>
                 </div>

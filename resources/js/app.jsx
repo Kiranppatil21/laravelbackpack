@@ -18,6 +18,18 @@ createInertiaApp({
         const root = createRoot(el);
 
         root.render(<App {...props} />);
+        // test hook: mark the app element after client-side hydration so E2E tests can wait for it
+        // use requestAnimationFrame to ensure it's set after the first paint/hydration
+        try {
+            if (typeof requestAnimationFrame !== 'undefined') {
+                requestAnimationFrame(() => el.setAttribute('data-test-hydrated', 'true'));
+            } else {
+                // fallback
+                setTimeout(() => el.setAttribute('data-test-hydrated', 'true'), 0);
+            }
+        } catch (e) {
+            // ignore in environments where globals are not available
+        }
     },
     progress: {
         color: '#4B5563',

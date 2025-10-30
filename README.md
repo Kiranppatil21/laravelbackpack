@@ -105,6 +105,16 @@ This repository implements the backend foundations for the Phase 1 plan. Below i
 - Tailwind: Present in `package.json` devDependencies.
 - Roles: Spatie permission included; `RoleSeeder` seeds `Super Admin` and `Agency Owner` plus additional roles (HR, Client, Guard/Employee, Visitor, Police).
 
+## Cypress end-to-end tests
+
+For details on running the Cypress end-to-end tests, stable test selectors used in the app, fixtures, and helper scripts, see `docs/CYPRESS.md`.
+
+Run the primary employee-create spec locally with:
+
+```bash
+npx cypress run --spec "cypress/e2e/employee_create.cy.js"
+```
+
 Simple ERD (text-based)
 
 Tenants/Central vs Tenant DBs

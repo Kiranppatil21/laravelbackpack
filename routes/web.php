@@ -44,6 +44,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/clients', function () { return Inertia::render('Clients/Index'); })->name('clients.index');
     Route::get('/clients/create', function () { return Inertia::render('Clients/Create'); })->name('clients.create');
     Route::get('/clients/{id}/edit', function ($id) { return Inertia::render('Clients/Edit', ['id' => $id]); })->name('clients.edit');
+
+    Route::get('/employees', function () { return Inertia::render('Employees/Index'); })->name('employees.index');
+    Route::get('/employees/create', function () { return Inertia::render('Employees/Create'); })->name('employees.create');
+    Route::get('/employees/{id}/edit', function ($id) { return Inertia::render('Employees/Edit', ['id' => $id]); })->name('employees.edit');
 });
 
 require __DIR__.'/auth.php';

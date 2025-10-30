@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\EmployeeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,4 +28,5 @@ Route::middleware('auth:sanctum')->group(function () {
     // Agencies & Clients API for React frontend / SPA
     Route::apiResource('agencies', \App\Http\Controllers\Api\AgencyController::class);
     Route::apiResource('clients', \App\Http\Controllers\Api\ClientController::class);
+        Route::apiResource('employees', EmployeeController::class);
 });

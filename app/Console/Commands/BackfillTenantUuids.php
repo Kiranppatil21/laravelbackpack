@@ -33,8 +33,12 @@ class BackfillTenantUuids extends Command
             $processed = 0;
 
             while (true) {
+                // Only select rows that are missing tenant_uuid and have a tenant_id.
+                // Rows with null tenant_id cannot be backfilled and would otherwise be
+                // re-selected on each loop iteration, causing an endless loop.
                 $ids = DB::table($table)
                     ->whereNull('tenant_uuid')
+                    ->whereNotNull('tenant_id')
                     ->orderBy('id')
                     ->limit($chunk)
                     ->pluck('id');

@@ -1,0 +1,47 @@
+[
+    {
+        "id": 11,
+        "tenant_id": null,
+        "tenant_uuid": null,
+        "name": "Treutel-Reynolds",
+        "details": "591 Abe Pike Apt. 191\nKesslerbury, MN 61945-0233\nPhone: (463) 499-4856",
+        "created_at": "2025-10-25 15:49:26",
+        "updated_at": "2025-10-25 15:49:26"
+    },
+    {
+        "id": 12,
+        "tenant_id": null,
+        "tenant_uuid": null,
+        "name": "Wisozk-Morissette",
+        "details": "1811 Jaquelin Curve Suite 807\nEast Brandoshire, MO 55860\nPhone: 248-697-0103",
+        "created_at": "2025-10-25 15:49:26",
+        "updated_at": "2025-10-25 15:49:26"
+    },
+    {
+        "id": 13,
+        "tenant_id": null,
+        "tenant_uuid": null,
+        "name": "Hartmann, Lakin and Nitzsche",
+        "details": "51911 Kohler Mission\nWest Beaulah, VA 98080\nPhone: +1-209-902-7586",
+        "created_at": "2025-10-25 15:49:26",
+        "updated_at": "2025-10-25 15:49:26"
+    },
+    {
+        "id": 14,
+        "tenant_id": null,
+        "tenant_uuid": null,
+        "name": "Prosacco LLC",
+        "details": "18053 Helen Unions\nWest Tressieburgh, NM 21347-1912\nPhone: (862) 359-5031",
+        "created_at": "2025-10-25 15:49:26",
+        "updated_at": "2025-10-25 15:49:26"
+    },
+    {
+        "id": 15,
+        "tenant_id": null,
+        "tenant_uuid": null,
+        "name": "Cartwright and Sons",
+        "details": "96170 Jazmyne Stream\nStreichside, CO 69707\nPhone: +1-407-990-3870",
+        "created_at": "2025-10-25 15:49:26",
+        "updated_at": "2025-10-25 15:49:26"
+    }
+]
