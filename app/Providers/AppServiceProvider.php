@@ -11,6 +11,7 @@ use App\Models\Client;
 use App\Policies\AgencyPolicy;
 use App\Policies\ClientPolicy;
 use App\Policies\EmployeePolicy;
+use App\Policies\AttendancePolicy;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -36,6 +37,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Agency::class, AgencyPolicy::class);
         Gate::policy(Client::class, ClientPolicy::class);
     Gate::policy(\App\Models\Employee::class, EmployeePolicy::class);
+    Gate::policy(\App\Models\Attendance::class, AttendancePolicy::class);
 
         // Ensure routes/api.php is loaded in projects that don't include a custom RouteServiceProvider
         $apiRoutes = base_path('routes/api.php');

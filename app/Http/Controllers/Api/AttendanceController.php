@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
+use App\Services\QRValidator;
+use App\Services\GeoValidator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -19,6 +21,9 @@ class AttendanceController extends Controller
             'shift_id' => 'nullable|integer',
         ]);
 
+        $qrValidator = new QRValidator();
+        $geoValidator = new GeoValidator();
+
         $data['check_in_at'] = now();
         $data['created_by'] = Auth::id();
 
@@ -29,6 +34,28 @@ class AttendanceController extends Controller
 
         if ($active) {
             return response()->json(['message' => 'Active check-in exists'], 409);
+        }
+
+        // Extra validation for QR/Geo types
+        $type = $data['check_in_type'] ?? null;
+        if ($type === 'qr') {
+            $code = $data['check_in_meta']['qr_code'] ?? '';
+            if (! $qrValidator->isValid($code)) {
+                return response()->json(['message' => 'Invalid QR code'], 422);
+            }
+        }
+
+        if ($type === 'geo') {
+            $lat = $data['check_in_meta']['lat'] ?? null;
+            $lon = $data['check_in_meta']['lon'] ?? null;
+            $siteLat = $request->input('site_lat');
+            $siteLon = $request->input('site_lon');
+            if ($lat === null || $lon === null || $siteLat === null || $siteLon === null) {
+                return response()->json(['message' => 'Missing geo coordinates'], 422);
+            }
+            if (! $geoValidator->isWithinRadius((float)$lat, (float)$lon, (float)$siteLat, (float)$siteLon)) {
+                return response()->json(['message' => 'Out of allowed radius'], 422);
+            }
         }
 
         $attendance = Attendance::create($data);
