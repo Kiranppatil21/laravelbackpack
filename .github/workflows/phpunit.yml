@@ -39,6 +39,5 @@ jobs:
           php artisan migrate --force --no-interaction
 
       - name: Run PHPUnit
-        # --no-interaction is not supported by the underlying test runner in some images
-        # (causes `Unknown option "--no-interaction"`). Run with --verbose only.
-        run: php artisan test --verbose
+        # Run tests without passing flags that the underlying runner may not accept
+        run: php artisan test
