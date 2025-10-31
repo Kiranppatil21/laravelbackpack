@@ -21,6 +21,19 @@ jobs:
           extensions: mbstring, bcmath, xml, gd, pdo, pdo_sqlite
           ini-values: post_max_size=256M, memory_limit=2G
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Node dependencies
+        run: |
+          npm ci
+
+      - name: Build frontend assets (Vite)
+        run: |
+          npm run build --if-present
+
       - name: Get Composer Cache
         uses: actions/cache@v4
         with:
