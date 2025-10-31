@@ -24,9 +24,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(\App\Services\RazorpayResolverInterface::class, function ($app) {
             return new \App\Services\RazorpayResolver;
         });
-        // Ensure the container resolves PayrollCalculator to the wrapper so tests and services
-        // that use container resolution get the deterministic wrapper behavior.
-        $this->app->bind(\App\Services\PayrollCalculator::class, \App\Services\PayrollCalculatorWrapper::class);
+    // Previously the PayrollCalculator was bound to a wrapper for deterministic
+    // behavior during debugging. We prefer explicit option overrides (via
+    // $options['professional_tax_mapping']) and will remove container-level
+    // bindings to avoid surprising resolution in consumers.
     }
 
     /**
