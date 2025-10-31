@@ -2,29 +2,16 @@
 
 namespace App\Services;
 
-class PayrollCalculator
+/**
+ * Temporary debug variant of PayrollCalculator used for reproducing mapping override behavior in tests.
+ * This is intentionally self-contained so the PHPUnit run can exercise the override logic and write
+ * debug traces to /tmp for inspection.
+ */
+class PayrollCalculatorDebug
 {
-    /**
-     * Compute payroll with options for Indian tax regimes and statutory deductions.
-     *
-     * Options supported:
-     * - regime: 'old' or 'new' (defaults to 'old')
-     * - include_epf: bool (defaults to true) — whether to deduct employee EPF (12% of basic)
-     * - basic_percent: float (0-1) portion of gross counted as 'basic' for EPF (defaults to 0.4)
-     * - state: string|null for professional tax rules (simple mapping)
-     *
-     * Inputs are monthly amounts (base salary, allowances, deductions).
-     * We annualize by multiplying by 12 and compute annual tax then convert back to monthly.
-     *
-     * @param float $baseSalary Monthly base salary
-     * @param float $allowances Monthly allowances
-     * @param float $deductions Monthly other deductions (before EPF/prof tax)
-     * @param array $options
-     * @return array [monthlyGross, monthlyNet, breakdown]
-     */
     public function compute(float $baseSalary, float $allowances = 0.0, float $deductions = 0.0, array $options = []): array
     {
-    // Normalize incoming options
+        @file_put_contents('/tmp/prof_tax_debug.log', "PayrollCalculatorDebug::compute called with options: " . json_encode($options) . PHP_EOL, FILE_APPEND);
 
         $regime = $options['regime'] ?? 'old';
         $includeEpf = $options['include_epf'] ?? true;
@@ -56,7 +43,6 @@ class PayrollCalculator
 
         $basic = $monthlyGross * $basicPercent;
         $epf = $includeEpf ? round($basic * 0.12, 2) : 0.0;
-        // Ensure computeProfessionalTax receives $options so overrides can be used
         $professionalTax = $this->computeProfessionalTax($state, $monthlyGross, $options);
 
         $monthlyNet = round($monthlyGross - $monthlyTax - $deductions - $epf - $professionalTax, 2);
@@ -122,71 +108,23 @@ class PayrollCalculator
     protected function computeProfessionalTax(?string $state, float $monthlyGross, array $options = []): float
     {
         $mappingOverride = $options['professional_tax_mapping'] ?? null;
-        // Safely attempt to read config mapping; if Laravel's config() isn't usable (plain PHPUnit runs), try loading the file directly
-        $configMapping = [];
-        if (function_exists('config')) {
-            try {
-                // config/payroll.php uses the key 'professional_tax'
-                $configMapping = config('payroll.professional_tax', []);
-            } catch (\Throwable $e) {
-                $configMapping = [];
-            }
-        }
 
-        if (empty($configMapping)) {
-            // Try to load config file directly from the repository when running outside a full Laravel bootstrap
-            $projectRoot = dirname(__DIR__, 2); // app/Services -> app -> project root
-            $configFile = $projectRoot . '/config/payroll.php';
-            if (file_exists($configFile)) {
-                try {
-                    $cfg = include $configFile;
-                    if (is_array($cfg) && isset($cfg['professional_tax']) && is_array($cfg['professional_tax'])) {
-                        $configMapping = $cfg['professional_tax'];
-                    }
-                } catch (\Throwable $e) {
-                    // ignore and leave mapping empty
-                }
-            }
-        }
-
-    // no-op: professional tax decision will be based on options override, config mapping, or legacy rules
+        $line = "computeProfessionalTax Debug called with state=" . var_export($state, true) . " monthlyGross=" . var_export($monthlyGross, true) . " mappingOverride=" . json_encode($mappingOverride) . PHP_EOL;
+        @file_put_contents('/tmp/prof_tax_debug.log', $line, FILE_APPEND);
 
         $s = $state ? strtolower(trim($state)) : null;
-
-        // 1) override mapping
         if (is_array($mappingOverride) && $s && isset($mappingOverride[$s])) {
             $entry = $mappingOverride[$s];
             $threshold = $entry['threshold'] ?? null;
             $amount = $entry['amount'] ?? null;
-            // using override for {$s}: threshold={$threshold}, amount={$amount}
+            $line = "using override for {$s}: threshold={$threshold}, amount={$amount}\n";
+            @file_put_contents('/tmp/prof_tax_debug.log', $line, FILE_APPEND);
             if ($threshold !== null && $amount !== null && $monthlyGross > $threshold) {
                 return (float) $amount;
             }
             return 0.0;
         }
 
-        // 2) config mapping
-        if (is_array($configMapping) && $s && isset($configMapping[$s])) {
-            $entry = $configMapping[$s];
-            $threshold = $entry['threshold'] ?? null;
-            $amount = $entry['amount'] ?? null;
-            // using config for {$s}: threshold={$threshold}, amount={$amount}
-            if ($threshold !== null && $amount !== null && $monthlyGross > $threshold) {
-                return (float) $amount;
-            }
-            return 0.0;
-        }
-
-        // 3) legacy fallback rules
-        if (! $s) return 0.0;
-        switch ($s) {
-            case 'maharashtra':
-                return $monthlyGross > 15000 ? 200.0 : 0.0;
-            case 'karnataka':
-            case 'tamil nadu':
-                return $monthlyGross > 10000 ? 200.0 : 0.0;
-            default:
-                return 0.0;
-        }
+        return 0.0;
     }
 }
