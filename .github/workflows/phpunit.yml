@@ -51,6 +51,10 @@ jobs:
           # run migrations (use sqlite file created above)
           php artisan migrate --force --no-interaction
 
+      - name: Seed test roles
+        run: |
+          php artisan db:seed --class=TestRolesSeeder --force
+
       - name: Run PHPUnit
         # Run tests without passing flags that the underlying runner may not accept
         run: php artisan test
