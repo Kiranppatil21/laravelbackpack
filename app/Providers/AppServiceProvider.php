@@ -11,6 +11,7 @@ use App\Models\Client;
 use App\Policies\AgencyPolicy;
 use App\Policies\ClientPolicy;
 use App\Policies\EmployeePolicy;
+use App\Policies\AttendancePolicy;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -23,6 +24,11 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(\App\Services\RazorpayResolverInterface::class, function ($app) {
             return new \App\Services\RazorpayResolver;
         });
+        // The test-suite expects the container to resolve a wrapper instance
+        // when resolving PayrollCalculator (this allows deterministic overrides
+        // in tests). Rebind PayrollCalculator to the wrapper so consumers that
+        // resolve the contract continue to receive the wrapper.
+        $this->app->bind(\App\Services\PayrollCalculator::class, \App\Services\PayrollCalculatorWrapper::class);
     }
 
     /**
@@ -36,6 +42,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Agency::class, AgencyPolicy::class);
         Gate::policy(Client::class, ClientPolicy::class);
     Gate::policy(\App\Models\Employee::class, EmployeePolicy::class);
+    Gate::policy(\App\Models\Attendance::class, AttendancePolicy::class);
 
         // Ensure routes/api.php is loaded in projects that don't include a custom RouteServiceProvider
         $apiRoutes = base_path('routes/api.php');

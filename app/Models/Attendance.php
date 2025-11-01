@@ -12,49 +12,31 @@ class Attendance extends Model
     use CrudTrait;
     use HasFactory;
 
-    /*
-    |--------------------------------------------------------------------------
-    | GLOBAL VARIABLES
-    |--------------------------------------------------------------------------
-    */
+    // Match the migration table name
+    protected $table = 'attendances';
 
-    // Migration created the table as `attendance` (singular).
-    // Keep the model in sync with the DB.
-    protected $table = 'attendance';
-
-    // protected $primaryKey = 'id';
-    // public $timestamps = false;
     protected $guarded = ['id'];
-    // protected $fillable = [];
-    // protected $hidden = [];
 
-    /*
-    |--------------------------------------------------------------------------
-    | FUNCTIONS
-    |--------------------------------------------------------------------------
-    */
+    protected $fillable = [
+        'employee_id',
+        'tenant_uuid',
+        'check_in_at',
+        'check_out_at',
+        'check_in_type',
+        'check_in_meta',
+        'shift_id',
+        'created_by',
+    ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | RELATIONS
-    |--------------------------------------------------------------------------
-    */
+    protected $casts = [
+        'check_in_meta' => 'array',
+        'check_in_at' => 'datetime',
+        'check_out_at' => 'datetime',
+    ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | SCOPES
-    |--------------------------------------------------------------------------
-    */
-
-    /*
-    |--------------------------------------------------------------------------
-    | ACCESSORS
-    |--------------------------------------------------------------------------
-    */
-
-    /*
-    |--------------------------------------------------------------------------
-    | MUTATORS
-    |--------------------------------------------------------------------------
-    */
+    public function employee()
+    {
+        return $this->belongsTo(Employee::class);
+    }
 }
+    // Use plural table name matching migration

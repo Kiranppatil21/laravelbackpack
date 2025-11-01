@@ -17,7 +17,7 @@ jobs:
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.1'
+          php-version: '8.2'
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -41,6 +41,10 @@ jobs:
         run: |
           php artisan migrate --force
 
+      - name: Seed test roles
+        run: |
+          php artisan db:seed --class=TestRolesSeeder --force
+
       - name: Build assets
         run: |
           npm run build
@@ -63,3 +67,13 @@ jobs:
           fi
         env:
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+
+      - name: Upload Cypress artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-artifacts
+          path: |
+            cypress/videos
+            cypress/screenshots
+            cypress/results || true

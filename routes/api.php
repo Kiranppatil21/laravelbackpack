@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\EmployeeController;
+use App\Http\Controllers\Api\PayslipController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,4 +30,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('agencies', \App\Http\Controllers\Api\AgencyController::class);
     Route::apiResource('clients', \App\Http\Controllers\Api\ClientController::class);
         Route::apiResource('employees', EmployeeController::class);
+    
+    // Attendance API (Phase 4 scaffolding)
+    Route::prefix('attendance')->group(function () {
+        Route::post('/checkin', [App\Http\Controllers\Api\AttendanceController::class, 'checkIn']);
+        Route::post('/checkout', [App\Http\Controllers\Api\AttendanceController::class, 'checkOut']);
+        Route::get('/reports', [App\Http\Controllers\Api\AttendanceController::class, 'report']);
+                Route::get('payslips/{payslip}/download', [PayslipController::class, 'download']);
+    });
 });

@@ -14,11 +14,25 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup PHP
-        uses: shivammathur/setup-php@v4
+        # use a stable v2 tag to avoid transient resolution issues in hosted runners
+        uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
           extensions: mbstring, bcmath, xml, gd, pdo, pdo_sqlite
           ini-values: post_max_size=256M, memory_limit=2G
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Node dependencies
+        run: |
+          npm ci
+
+      - name: Build frontend assets (Vite)
+        run: |
+          npm run build --if-present
 
       - name: Get Composer Cache
         uses: actions/cache@v4
@@ -37,5 +51,10 @@ jobs:
           # run migrations (use sqlite file created above)
           php artisan migrate --force --no-interaction
 
+      - name: Seed test roles
+        run: |
+          php artisan db:seed --class=TestRolesSeeder --force
+
       - name: Run PHPUnit
-        run: php artisan test --no-interaction --verbose
+        # Run tests without passing flags that the underlying runner may not accept
+        run: php artisan test

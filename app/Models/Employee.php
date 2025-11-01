@@ -31,6 +31,8 @@ class Employee extends Model
         'name',
         'email',
         'phone',
+        'monthly_salary',
+        'state',
         'client_id',
         'job_role',
         'shift',
@@ -44,6 +46,7 @@ class Employee extends Model
     protected $casts = [
         'shift' => 'array',
         'kyc_completed_at' => 'datetime',
+        'monthly_salary' => 'decimal:2',
     ];
 
     /**
