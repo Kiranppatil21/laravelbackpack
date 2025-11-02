@@ -35,6 +35,11 @@ class SignupProvisioningE2ETest extends TestCase
         };
         $this->app->instance('\Razorpay\\Api\\Api', $fakeApi);
 
+    // Force jobs to run synchronously within this test so background worker
+    // resolution (which runs in a separate process) does not lose our
+    // container binding for the fake Razorpay API.
+    $this->app['config']->set('queue.default', 'sync');
+
         // Post to signup with razorpay gateway
         $response = $this->post('/signup', [
             'name' => 'E2E Tenant',
