@@ -48,9 +48,9 @@ jobs:
         run: |
           php artisan db:seed --class=TestRolesSeeder --force
 
-      - name: Require VISITOR API secret
+      - name: Require visitor secret (API key or HMAC)
         run: |
-          if [ -z "${VISITOR_API_KEY}" ]; then echo "Missing VISITOR_API_KEY secret"; exit 1; fi
+          if [ -z "${{ secrets.VISITOR_API_KEY }}" ] && [ -z "${{ secrets.VISITOR_HMAC_SECRET }}" ]; then echo "Missing both VISITOR_API_KEY and VISITOR_HMAC_SECRET secrets"; exit 1; fi
 
       - name: Build assets
         run: |
@@ -65,15 +65,17 @@ jobs:
           done
 
       - name: Run Cypress tests
+      - name: Run Cypress tests
         run: |
           # Run all specs; pass VISITOR_API_KEY into Cypress env so specs can use it
           if [ -n "$CYPRESS_RECORD_KEY" ]; then
-            npx cypress run --record --parallel --env VISITOR_API_KEY=${VISITOR_API_KEY}
+            npx cypress run --record --parallel --env VISITOR_API_KEY=${{ secrets.VISITOR_API_KEY }}
           else
-            npx cypress run --env VISITOR_API_KEY=${VISITOR_API_KEY}
+            npx cypress run --env VISITOR_API_KEY=${{ secrets.VISITOR_API_KEY }}
           fi
         env:
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          QUEUE_CONNECTION: sync
 
       - name: Upload Cypress artifacts
         if: always()
