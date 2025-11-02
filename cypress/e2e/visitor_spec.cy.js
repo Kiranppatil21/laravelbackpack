@@ -8,7 +8,12 @@ describe('Visitor check-in flow', () => {
     };
 
     // create checkin via API
-    cy.request('POST', '/api/visitors/checkin', payload).then((resp) => {
+    const headers = {};
+    if (Cypress.env('VISITOR_API_KEY')) {
+      headers['X-VISITOR-API-KEY'] = Cypress.env('VISITOR_API_KEY');
+    }
+
+    cy.request({ method: 'POST', url: '/api/visitors/checkin', body: payload, headers }).then((resp) => {
       expect(resp.status).to.equal(201);
       expect(resp.body).to.have.property('visitor');
       expect(resp.body).to.have.property('visit');

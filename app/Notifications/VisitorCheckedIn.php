@@ -3,12 +3,13 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Notifications\Messages\MailMessage;
 use App\Models\Visitor;
 use App\Models\VisitLog;
 
-class VisitorCheckedIn extends Notification
+class VisitorCheckedIn extends Notification implements ShouldQueue
 {
     use Queueable;
 
@@ -31,3 +32,4 @@ class VisitorCheckedIn extends Notification
             ->line('Thank you');
     }
 }
+

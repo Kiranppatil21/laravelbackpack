@@ -9,6 +9,9 @@ on:
 jobs:
   cypress-run:
     runs-on: ubuntu-latest
+    env:
+      VISITOR_API_KEY: ${{ secrets.VISITOR_API_KEY }}
+      VISITOR_HMAC_SECRET: ${{ secrets.VISITOR_HMAC_SECRET }}
 
     steps:
       - name: Checkout
@@ -45,6 +48,10 @@ jobs:
         run: |
           php artisan db:seed --class=TestRolesSeeder --force
 
+      - name: Require VISITOR API secret
+        run: |
+          if [ -z "${VISITOR_API_KEY}" ]; then echo "Missing VISITOR_API_KEY secret"; exit 1; fi
+
       - name: Build assets
         run: |
           npm run build
@@ -59,11 +66,11 @@ jobs:
 
       - name: Run Cypress tests
         run: |
-          # Run all specs; if CYPRESS_RECORD_KEY env var is set we will run with recording + parallel
+          # Run all specs; pass VISITOR_API_KEY into Cypress env so specs can use it
           if [ -n "$CYPRESS_RECORD_KEY" ]; then
-            npx cypress run --record --parallel
+            npx cypress run --record --parallel --env VISITOR_API_KEY=${VISITOR_API_KEY}
           else
-            npx cypress run
+            npx cypress run --env VISITOR_API_KEY=${VISITOR_API_KEY}
           fi
         env:
           CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}

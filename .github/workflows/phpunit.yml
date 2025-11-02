@@ -9,6 +9,9 @@ on:
 jobs:
   phpunit:
     runs-on: ubuntu-latest
+    env:
+      VISITOR_API_KEY: ${{ secrets.VISITOR_API_KEY }}
+      VISITOR_HMAC_SECRET: ${{ secrets.VISITOR_HMAC_SECRET }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -50,6 +53,10 @@ jobs:
           php artisan key:generate --ansi
           # run migrations (use sqlite file created above)
           php artisan migrate --force --no-interaction
+
+      - name: Require VISITOR API secret is set
+        run: |
+          if [ -z "${VISITOR_API_KEY}" ]; then echo "Missing VISITOR_API_KEY secret"; exit 1; fi
 
       - name: Seed test roles
         run: |

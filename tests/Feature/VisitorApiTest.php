@@ -31,7 +31,13 @@ class VisitorApiTest extends TestCase
         $host = User::factory()->create();
         $payload['host_id'] = $host->id;
 
-        $response = $this->postJson('/api/visitors/checkin', $payload);
+        // Include API key header in CI if set
+        $headers = [];
+        if (env('VISITOR_API_KEY')) {
+            $headers['X-VISITOR-API-KEY'] = env('VISITOR_API_KEY');
+        }
+
+        $response = $this->postJson('/api/visitors/checkin', $payload, $headers);
         $response->assertStatus(201);
 
         $this->assertDatabaseHas('visitors', ['email' => 'alice@example.test', 'name' => 'Alice Visitor']);
