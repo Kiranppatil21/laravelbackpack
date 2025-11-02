@@ -44,6 +44,11 @@ jobs:
         run: |
           php artisan migrate --force
 
+      - name: Start queue worker (background)
+        run: |
+          export QUEUE_CONNECTION=database
+          php artisan queue:work --sleep=1 --tries=1 > /tmp/queue.log 2>&1 &
+
       - name: Seed test roles
         run: |
           php artisan db:seed --class=TestRolesSeeder --force

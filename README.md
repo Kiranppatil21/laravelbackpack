@@ -1,6 +1,31 @@
 # laravelbackpack
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
+## Visitor check-in (Phase 5) — quick notes
+
+- Endpoint: POST /api/visitors/checkin
+- Protection: supports either a simple API key header or HMAC-signed payloads. The middleware will accept:
+	- `X-VISITOR-API-KEY` (simple shared secret), or
+	- `X-VISITOR-TIMESTAMP` and `X-VISITOR-SIGNATURE` where signature = HMAC-SHA256(timestamp + '|' + raw_body, VISITOR_HMAC_SECRET)
+
+### Adding secrets (GitHub Actions)
+
+1. Go to your repository Settings → Secrets → Actions
+2. Add `VISITOR_API_KEY` (optional if you prefer HMAC only) with a strong random value.
+3. Add `VISITOR_HMAC_SECRET` (optional if you prefer API key only) with a strong random value.
+
+At least one of `VISITOR_API_KEY` or `VISITOR_HMAC_SECRET` must be set for CI workflows to run.
+
+### Queue worker in CI
+
+- CI now starts a background `php artisan queue:work` using the `database` queue driver so queued notifications (like host emails) are processed during runs. If you prefer to run the worker differently, update the workflow steps in `.github/workflows/*`.
+
+### Local testing
+
+- For local development you can leave both secrets unset — the middleware is a no-op locally. To test signing locally set `VISITOR_HMAC_SECRET` and use the example scripts in `/scripts`:
+	- `scripts/sign-node.js` (Node.js)
+	- `scripts/sign-python.py` (Python)
+
 <p align="center">
 <a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
