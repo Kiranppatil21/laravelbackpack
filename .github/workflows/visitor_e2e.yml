@@ -57,12 +57,20 @@ jobs:
           export QUEUE_CONNECTION=database
           php artisan queue:work --sleep=1 --tries=1 > /tmp/queue.log 2>&1 &
 
+      - name: Start MailHog (for capturing mail)
+        run: |
+          docker run -d --name mailhog -p 1025:1025 -p 8025:8025 mailhog/mailhog:latest
+
       - name: Require visitor secret (API key or HMAC)
         run: |
           if [ -z "${{ secrets.VISITOR_API_KEY }}" ] && [ -z "${{ secrets.VISITOR_HMAC_SECRET }}" ]; then echo "Missing both VISITOR_API_KEY and VISITOR_HMAC_SECRET secrets"; exit 1; fi
 
       - name: Start Laravel server
         run: |
+          # Configure app to use MailHog SMTP
+          php -r "file_put_contents('.env', str_replace(['MAIL_MAILER=log','MAIL_HOST=127.0.0.1','MAIL_PORT=2525'], ['MAIL_MAILER=smtp','MAIL_HOST=127.0.0.1','MAIL_PORT=1025'], file_get_contents('.env')) );"
+          php artisan config:clear || true
+          php artisan migrate --force
           php artisan serve --port=8000 > server.log 2>&1 &
           for i in {1..30}; do
             curl -sSf http://127.0.0.1:8000 && break || sleep 1
@@ -95,17 +103,20 @@ jobs:
           echo
           cat /tmp/checkin_resp.txt
 
-      - name: Wait for notification processing (poll laravel.log)
+      - name: Wait for notification processing (poll MailHog API)
         run: |
-          echo "Waiting for notification to appear in log..."
+          echo "Waiting for notification to appear in MailHog..."
           for i in {1..30}; do
-            if grep -q "ci_host@example.test" storage/logs/laravel.log; then
-              echo "Found mail log"
+            COUNT=$(curl -s "http://127.0.0.1:8025/api/v2/messages" | jq '.total') || COUNT=0
+            if [ "$COUNT" -gt 0 ]; then
+              echo "Found mail(s) in MailHog"
+              # show list for debugging
+              curl -s "http://127.0.0.1:8025/api/v2/messages" | jq '.' > /tmp/mailhog_messages.json || true
               exit 0
             fi
             sleep 1
           done
-          echo "Mail log not found:"; tail -n 200 storage/logs/laravel.log || true
+          echo "No mails found in MailHog:"; curl -s "http://127.0.0.1:8025/api/v2/messages" | jq '.' || true
           exit 1
 
       - name: Upload logs

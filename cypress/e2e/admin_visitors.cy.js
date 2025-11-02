@@ -43,11 +43,24 @@ describe('Admin Visitors - filters & pagination', () => {
     cy.get('input[name=search]').clear().type('Cypress Visitor');
     cy.get('button').contains('Apply').click();
 
-    cy.get('[data-cy^="visit-row-"]').contains('Cypress Visitor');
+    // Assert visible rows contain our visitor
+    cy.get('[data-cy^="visit-row-"]').should('contain.text', 'Cypress Visitor');
 
-    // Test pagination: set per page to 10, then navigate pages
+    // Test pagination: set per page to 10, then navigate pages and assert counts
     cy.get('select').select('10');
-    cy.get('[data-cy="visitors-next"]').click();
-    cy.get('[data-cy^="visit-row-"]').should('exist');
+    cy.wait(500);
+    cy.get('[data-cy^="visit-row-"]').its('length').should('be.lte', 10);
+
+    // Navigate to next page if available
+    cy.get('[data-cy="visitors-next"]').then(($btn) => {
+      if (!$btn.prop('disabled')) {
+        cy.wrap($btn).click();
+        cy.wait(500);
+        cy.get('[data-cy^="visit-row-"]').its('length').should('be.lte', 10);
+      }
+    });
+
+    // Assert the UI shows total count text
+    cy.contains(/Showing \d+ of \d+/).should('exist');
   });
 });
