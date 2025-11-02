@@ -9,6 +9,8 @@ on:
 jobs:
   phpunit:
     runs-on: ubuntu-latest
+    env:
+      VISITOR_HMAC_TTL: '300'
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -72,5 +74,6 @@ jobs:
         run: |
           export VISITOR_API_KEY=${{ secrets.VISITOR_API_KEY }} || true
           export VISITOR_HMAC_SECRET=${{ secrets.VISITOR_HMAC_SECRET }} || true
+          export VISITOR_HMAC_TTL=${{ env.VISITOR_HMAC_TTL }} || true
           export QUEUE_CONNECTION=database
           php artisan test

@@ -12,6 +12,7 @@ jobs:
     env:
       VISITOR_API_KEY: ${{ secrets.VISITOR_API_KEY }}
       VISITOR_HMAC_SECRET: ${{ secrets.VISITOR_HMAC_SECRET }}
+      VISITOR_HMAC_TTL: '300'
 
     steps:
       - name: Checkout
