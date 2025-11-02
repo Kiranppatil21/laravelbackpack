@@ -22,4 +22,9 @@ class VisitLog extends Model
     {
         return $this->belongsTo(Visitor::class);
     }
+
+    public function host(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\User::class, 'host_id');
+    }
 }

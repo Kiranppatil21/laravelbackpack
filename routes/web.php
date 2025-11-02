@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\VisitorAdminController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -48,6 +49,40 @@ Route::middleware('auth')->group(function () {
     Route::get('/employees', function () { return Inertia::render('Employees/Index'); })->name('employees.index');
     Route::get('/employees/create', function () { return Inertia::render('Employees/Create'); })->name('employees.create');
     Route::get('/employees/{id}/edit', function ($id) { return Inertia::render('Employees/Edit', ['id' => $id]); })->name('employees.edit');
+
+    // Visitor admin pages
+    Route::get('/admin/visitors', function () { return Inertia::render('Visitors/Index'); })->name('admin.visitors.index');
+
+    // Admin API for paginated visitor logs (used by Inertia page)
+    Route::get('/admin/api/visitors/logs', [VisitorAdminController::class, 'index'])
+        ->name('admin.visitors.logs');
+
+    // Plain blade fallback for manual testing
+    Route::get('/admin/visitors/plain', function (\Illuminate\Http\Request $request) {
+        $this->authorize('viewAny', App\Models\VisitLog::class);
+        $query = App\Models\VisitLog::with(['visitor', 'host'])->latest('check_in_at');
+
+        if ($request->filled('search')) {
+            $s = $request->query('search');
+            $query->whereHas('visitor', function ($q) use ($s) {
+                $q->where('name', 'like', "%{$s}%")->orWhere('email', 'like', "%{$s}%");
+            });
+        }
+
+        if ($request->filled('from')) {
+            $from = \Carbon\Carbon::parse($request->query('from'))->startOfDay();
+            $query->where('check_in_at', '>=', $from);
+        }
+
+        if ($request->filled('to')) {
+            $to = \Carbon\Carbon::parse($request->query('to'))->endOfDay();
+            $query->where('check_in_at', '<=', $to);
+        }
+
+        $logs = $query->paginate(25)->appends($request->query());
+
+        return view('admin.visitors.index', ['logs' => $logs]);
+    })->name('admin.visitors.plain');
 });
 
 require __DIR__.'/auth.php';
