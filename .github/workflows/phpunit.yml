@@ -54,6 +54,9 @@ jobs:
       - name: Seed test roles
         run: |
           php artisan db:seed --class=TestRolesSeeder --force
+      - name: Seed visitor sample data
+        run: |
+          php artisan db:seed --class=VisitorSeeder --force
 
       - name: Run PHPUnit
         # Run tests without passing flags that the underlying runner may not accept

@@ -19,8 +19,8 @@ use App\Http\Controllers\Api\PayslipController;
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 
-// Public visitor check-in for kiosks / IoT devices (no auth)
-Route::post('/visitors/checkin', [\App\Http\Controllers\Api\VisitorController::class, 'checkIn']);
+// Public visitor check-in for kiosks / IoT devices (optionally protected by header)
+Route::post('/visitors/checkin', [\App\Http\Controllers\Api\VisitorController::class, 'checkIn'])->middleware(\App\Http\Middleware\VerifyVisitorApiKey::class);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);

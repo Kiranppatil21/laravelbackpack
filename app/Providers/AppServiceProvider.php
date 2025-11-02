@@ -60,5 +60,8 @@ class AppServiceProvider extends ServiceProvider
             // Fallback to a no-op middleware present in the app
             $router->aliasMiddleware('role', \App\Http\Middleware\AllowRole::class);
         }
+
+        // Alias for visitor API key middleware so kiosks can be protected by header
+        $router->aliasMiddleware('visitor.apikey', \App\Http\Middleware\VerifyVisitorApiKey::class);
     }
 }

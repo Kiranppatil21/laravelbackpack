@@ -8,6 +8,8 @@ use App\Models\Visitor;
 use App\Models\VisitLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
+use App\Notifications\VisitorCheckedIn;
 
 class VisitorController extends Controller
 {
@@ -50,6 +52,18 @@ class VisitorController extends Controller
             'source' => $data['source'] ?? 'kiosk',
             'external_id' => $data['external_id'] ?? null,
         ]);
+
+        // Notify host user if present (assumes host_id references users.id)
+        if (! empty($visit->host_id)) {
+            $host = User::find($visit->host_id);
+            if ($host) {
+                try {
+                    $host->notify(new VisitorCheckedIn($visitor, $visit));
+                } catch (\Throwable $e) {
+                    // don't fail check-in if notification delivery fails in tests/environments
+                }
+            }
+        }
 
         return response()->json(['visitor' => $visitor, 'visit' => $visit], 201);
     }

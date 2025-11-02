@@ -7,6 +7,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\Visitor;
 use App\Models\VisitLog;
 use App\Models\User;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\VisitorCheckedIn;
 
 class VisitorApiTest extends TestCase
 {
@@ -24,11 +26,18 @@ class VisitorApiTest extends TestCase
             'source' => 'test',
         ];
 
+        Notification::fake();
+
+        $host = User::factory()->create();
+        $payload['host_id'] = $host->id;
+
         $response = $this->postJson('/api/visitors/checkin', $payload);
         $response->assertStatus(201);
 
         $this->assertDatabaseHas('visitors', ['email' => 'alice@example.test', 'name' => 'Alice Visitor']);
         $this->assertDatabaseHas('visit_logs', ['source' => 'test']);
+
+        Notification::assertSentTo($host, VisitorCheckedIn::class);
     }
 
     public function test_checkout_sets_check_out_on_visitlog(): void
