@@ -4,23 +4,20 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class() extends Migration {
     public function up(): void
     {
-        if (! Schema::hasTable('visit_logs')) {
-            Schema::create('visit_logs', function (Blueprint $table) {
+        Schema::create('visit_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('visitor_id')->constrained('visitors')->onDelete('cascade');
-            $table->unsignedBigInteger('host_id')->nullable();
+            $table->foreignId('visitor_id')->constrained('visitors')->cascadeOnDelete();
+            $table->unsignedBigInteger('host_id')->nullable()->index();
+            $table->string('source')->nullable()->comment('web|kiosk|rfid|biometric|api');
             $table->timestamp('check_in_at')->nullable();
             $table->timestamp('check_out_at')->nullable();
-            $table->string('source')->nullable();
+            $table->string('external_id')->nullable()->index()->comment('id from IoT device or external system');
             $table->text('notes')->nullable();
-            $table->string('external_id')->nullable()->index(); // id from IoT device
             $table->timestamps();
-            });
-        }
+        });
     }
 
     public function down(): void

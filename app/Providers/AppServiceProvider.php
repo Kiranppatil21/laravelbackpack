@@ -8,10 +8,12 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use App\Models\Agency;
 use App\Models\Client;
+use App\Models\VisitLog;
 use App\Policies\AgencyPolicy;
 use App\Policies\ClientPolicy;
 use App\Policies\EmployeePolicy;
 use App\Policies\AttendancePolicy;
+use App\Policies\VisitLogPolicy;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -43,6 +45,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Client::class, ClientPolicy::class);
     Gate::policy(\App\Models\Employee::class, EmployeePolicy::class);
     Gate::policy(\App\Models\Attendance::class, AttendancePolicy::class);
+    Gate::policy(VisitLog::class, VisitLogPolicy::class);
 
         // Ensure routes/api.php is loaded in projects that don't include a custom RouteServiceProvider
         $apiRoutes = base_path('routes/api.php');

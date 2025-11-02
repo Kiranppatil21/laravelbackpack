@@ -13,10 +13,12 @@ class TestRolesSeeder extends Seeder
     public function run(): void
     {
         // Ensure the 'Visitor' role exists for tests that expect it
-        Role::firstOrCreate(['name' => 'Visitor']);
+    Role::firstOrCreate(['name' => 'Visitor']);
 
-        // Also ensure any other minimal roles used by tests are present
-        Role::firstOrCreate(['name' => 'Client']);
-        Role::firstOrCreate(['name' => 'HR']);
+    // Also ensure any other minimal roles used by tests are present
+    Role::firstOrCreate(['name' => 'Client']);
+    Role::firstOrCreate(['name' => 'HR']);
+    Role::firstOrCreate(['name' => 'Agency']);
+    Role::firstOrCreate(['name' => 'Super Admin']);
     }
 }

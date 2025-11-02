@@ -19,6 +19,9 @@ use App\Http\Controllers\Api\PayslipController;
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 
+// Public visitor check-in for kiosks / IoT devices (no auth)
+Route::post('/visitors/checkin', [\App\Http\Controllers\Api\VisitorController::class, 'checkIn']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -37,5 +40,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/checkout', [App\Http\Controllers\Api\AttendanceController::class, 'checkOut']);
         Route::get('/reports', [App\Http\Controllers\Api\AttendanceController::class, 'report']);
                 Route::get('payslips/{payslip}/download', [PayslipController::class, 'download']);
+    });
+
+    // Visitor management (Phase 5 scaffolding)
+    Route::prefix('visitors')->group(function () {
+        // Checkout uses visit log id — authenticated users can call this
+        Route::post('/{visit}/checkout', [App\Http\Controllers\Api\VisitorController::class, 'checkOut']);
+        // Listing of visit logs (requires auth)
+        Route::get('/logs', [App\Http\Controllers\Api\VisitorController::class, 'index']);
     });
 });
