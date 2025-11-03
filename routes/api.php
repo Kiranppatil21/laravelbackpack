@@ -49,4 +49,12 @@ Route::middleware('auth:sanctum')->group(function () {
         // Listing of visit logs (requires auth)
         Route::get('/logs', [App\Http\Controllers\Api\VisitorController::class, 'index']);
     });
+
+    // Finance & Compliance (Phase 6 scaffolding)
+    Route::prefix('finance')->group(function () {
+        Route::get('/invoices', [\App\Http\Controllers\Api\FinanceController::class, 'indexInvoices']);
+        Route::post('/invoices', [\App\Http\Controllers\Api\FinanceController::class, 'storeInvoice']);
+        Route::get('/invoices/{invoice}', [\App\Http\Controllers\Api\FinanceController::class, 'showInvoice']);
+        Route::post('/invoices/{invoice}/payments', [\App\Http\Controllers\Api\FinanceController::class, 'recordPayment']);
+    });
 });
