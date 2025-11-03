@@ -31,10 +31,22 @@ class VisitorApiTest extends TestCase
         $host = User::factory()->create();
         $payload['host_id'] = $host->id;
 
-        // Include API key header in CI if set
+        // Prepare auth headers depending on environment variables.
+        // If VISITOR_API_KEY is set, include it. If HMAC secret is set, sign the payload.
         $headers = [];
         if (env('VISITOR_API_KEY')) {
             $headers['X-VISITOR-API-KEY'] = env('VISITOR_API_KEY');
+        }
+
+        // If HMAC signing is required in the environment, compute signature over the raw JSON payload
+        // so tests pass both in CI (where a secret may be configured) and locally.
+        if (! empty(env('VISITOR_HMAC_SECRET'))) {
+            $content = json_encode($payload);
+            $timestamp = (string) time();
+            $message = $timestamp . '|' . $content;
+            $sig = hash_hmac('sha256', $message, env('VISITOR_HMAC_SECRET'));
+            $headers['X-VISITOR-SIGNATURE'] = $sig;
+            $headers['X-VISITOR-TIMESTAMP'] = $timestamp;
         }
 
         $response = $this->postJson('/api/visitors/checkin', $payload, $headers);
