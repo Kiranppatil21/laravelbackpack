@@ -1,0 +1,124 @@
+name: RBAC Authorization Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  rbac-tests:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.DB_DATABASE }}
+          MYSQL_USER: ${{ secrets.DB_USERNAME }}
+          MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping --silent -h localhost -uroot -p${{ secrets.DB_ROOT_PASSWORD }}"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: ${{ secrets.DB_DATABASE }}
+      DB_USERNAME: ${{ secrets.DB_USERNAME }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          extensions: mbstring, pdo_mysql
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install composer deps
+        run: composer install --no-progress --no-suggest --prefer-dist
+
+      - name: Install npm deps
+        run: npm ci --silent
+
+      - name: Start MySQL service and prepare database
+        uses: docker://mysql:8.0
+        # We use a service container step to ensure MySQL is available; later steps will connect to it on localhost:3306
+
+      - name: Wait for MySQL to be ready
+        run: |
+          for i in {1..30}; do
+            if mysqladmin ping -h 127.0.0.1 -u${{ secrets.DB_USERNAME }} -p${{ secrets.DB_PASSWORD }} --silent; then
+              echo "MySQL is up" && break
+            fi
+            echo "Waiting for MySQL..."; sleep 2
+          done
+
+      - name: Create .env.testing
+        run: |
+          cp .env.example .env.testing || true
+          php -r "file_put_contents('.env.testing', str_replace(['DB_CONNECTION=','DB_HOST=','DB_PORT=','DB_DATABASE=','DB_USERNAME=','DB_PASSWORD='], ['DB_CONNECTION=mysql','DB_HOST=127.0.0.1','DB_PORT=3306','DB_DATABASE='.getenv('DB_DATABASE'),'DB_USERNAME='.getenv('DB_USERNAME'),'DB_PASSWORD='.getenv('DB_PASSWORD')], file_get_contents('.env.testing')));"
+
+      - name: Prepare database (MySQL)
+        run: |
+          php artisan key:generate --ansi
+          php artisan migrate --env=testing --no-interaction
+
+      - name: Run RBAC tests
+        run: ./vendor/bin/phpunit --colors=always --testsuite=Feature --filter RoleBasedAuthorizationTest
+        continue-on-error: true
+
+      - name: Upload role auth failures artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: role-auth-failures
+          path: tests/_output/**
+
+      - name: Comment on PR with RBAC failures (if any)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'tests/_output';
+            if (!fs.existsSync(path)) {
+              core.info('No RBAC output directory found; skipping PR comment.');
+              return;
+            }
+            const files = fs.readdirSync(path).filter(f => f.endsWith('.csv'));
+            if (files.length === 0) {
+              core.info('No RBAC CSV artifacts present; skipping PR comment.');
+              return;
+            }
+
+            let body = '### Automated RBAC Authorization Test — Failures detected\n\n';
+            body += 'The RBAC test produced failure artifacts and they are attached to the workflow run as artifacts (name: **role-auth-failures**).\n\n';
+            body += 'Below are the first few lines from each failure CSV (truncated):\n\n';
+
+            for (const f of files) {
+              const content = fs.readFileSync(`${path}/${f}`, 'utf8').trim();
+              const preview = content.split('\n').slice(0, 10).join('\n');
+              body += `**${f}**\n\n`;
+              body += '```csv\n' + preview + '\n```\n\n';
+            }
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body,
+            });
