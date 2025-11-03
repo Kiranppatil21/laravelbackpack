@@ -58,6 +58,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/invoices/{invoice}/payments', [\App\Http\Controllers\Api\FinanceController::class, 'recordPayment']);
         // Reports
         Route::post('/reports/statutory', [\App\Http\Controllers\Api\FinanceController::class, 'generateStatutoryReport']);
+            // Ad-hoc CSV streaming (does not persist a StatutoryReport)
+            Route::post('/reports/statutory/download', [\App\Http\Controllers\Api\FinanceController::class, 'downloadStatutoryReportAdHoc']);
+    Route::get('/reports/statutory/{report}/download', [\App\Http\Controllers\Api\FinanceController::class, 'downloadStatutoryReportCsv']);
         Route::get('/reports/profitability', [\App\Http\Controllers\Api\FinanceController::class, 'profitability']);
     });
 });

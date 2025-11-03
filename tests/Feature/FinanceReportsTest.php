@@ -10,6 +10,14 @@ class FinanceReportsTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        // create and authenticate a user for protected API routes
+        $user = \App\Models\User::factory()->create();
+        $this->actingAs($user, 'sanctum');
+    }
+
     public function test_generate_gst_statutory_report()
     {
         // create an invoice with a taxed line item

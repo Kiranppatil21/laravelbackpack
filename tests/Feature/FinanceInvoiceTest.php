@@ -10,6 +10,13 @@ class FinanceInvoiceTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $user = \App\Models\User::factory()->create();
+        $this->actingAs($user, 'sanctum');
+    }
+
     public function test_create_invoice_and_compute_totals()
     {
         $user = \App\Models\User::factory()->create();
