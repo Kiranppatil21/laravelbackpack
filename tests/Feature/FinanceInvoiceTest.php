@@ -12,6 +12,9 @@ class FinanceInvoiceTest extends TestCase
 
     public function test_create_invoice_and_compute_totals()
     {
+        $user = \App\Models\User::factory()->create();
+        $this->actingAs($user, 'sanctum');
+
         $payload = [
             'issued_date' => now()->toDateString(),
             'items' => [
@@ -23,13 +26,22 @@ class FinanceInvoiceTest extends TestCase
         $resp = $this->postJson('/api/finance/invoices', $payload);
         $resp->assertStatus(201);
 
-        $body = $resp->json();
-        $this->assertArrayHasKey('id', $body);
-        $this->assertEquals( (2*100) + (1*200) + ((200*0.18)+(200*0.18)), $body['total_amount']);
+    $body = $resp->json();
+    $this->assertArrayHasKey('id', $body);
+    $invoice = Invoice::find($body['id']);
+    // debug dump to STDERR to inspect DB row during test runs
+    fwrite(STDERR, "DB invoice row: ".print_r(\DB::table('invoices')->where('id', $body['id'])->first(), true)."\n");
+    $expected = (2*100) + (1*200);
+    $expected += (2*100)*(18/100) + (1*200)*(18/100);
+    // invoice uses `total` column in this project
+    $this->assertEquals((float) number_format($expected, 2, '.', ''), (float) $invoice->total);
     }
 
     public function test_record_payment_and_update_status()
     {
+        $user = \App\Models\User::factory()->create();
+        $this->actingAs($user, 'sanctum');
+
         $payload = [
             'issued_date' => now()->toDateString(),
             'items' => [

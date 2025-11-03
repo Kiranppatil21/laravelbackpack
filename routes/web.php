@@ -53,6 +53,9 @@ Route::middleware('auth')->group(function () {
     // Visitor admin pages
     Route::get('/admin/visitors', function () { return Inertia::render('Visitors/Index'); })->name('admin.visitors.index');
 
+    // Finance admin pages (Inertia)
+    Route::get('/admin/finance/invoices', function () { return Inertia::render('Finance/Invoices/Index'); })->name('admin.finance.invoices.index');
+
     // Admin API for paginated visitor logs (used by Inertia page)
     Route::get('/admin/api/visitors/logs', [VisitorAdminController::class, 'index'])
         ->name('admin.visitors.logs');

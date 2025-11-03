@@ -56,5 +56,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/invoices', [\App\Http\Controllers\Api\FinanceController::class, 'storeInvoice']);
         Route::get('/invoices/{invoice}', [\App\Http\Controllers\Api\FinanceController::class, 'showInvoice']);
         Route::post('/invoices/{invoice}/payments', [\App\Http\Controllers\Api\FinanceController::class, 'recordPayment']);
+        // Reports
+        Route::post('/reports/statutory', [\App\Http\Controllers\Api\FinanceController::class, 'generateStatutoryReport']);
+        Route::get('/reports/profitability', [\App\Http\Controllers\Api\FinanceController::class, 'profitability']);
     });
 });

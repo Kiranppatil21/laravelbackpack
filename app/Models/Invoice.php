@@ -16,12 +16,10 @@ class Invoice extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'issued_date' => 'date',
+        'date' => 'date',
         'due_date' => 'date',
         'metadata' => 'array',
-        'gst_amount' => 'decimal:2',
-        'tds_amount' => 'decimal:2',
-        'total_amount' => 'decimal:2',
+        'total' => 'decimal:2',
     ];
 
     public function items()
