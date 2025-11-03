@@ -1,0 +1,49 @@
+name: RBAC Authorization Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  rbac-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.4
+          extensions: mbstring, pdo_mysql
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install composer deps
+        run: composer install --no-progress --no-suggest --prefer-dist
+
+      - name: Install npm deps
+        run: npm ci --silent
+
+      - name: Prepare database (sqlite file)
+        run: |
+          php artisan key:generate --ansi
+          mkdir -p database
+          touch database/database.sqlite
+          php artisan migrate --no-interaction
+
+      - name: Run RBAC tests
+        run: ./vendor/bin/phpunit --colors=always --testsuite=Feature --filter RoleBasedAuthorizationTest
+        continue-on-error: true
+
+      - name: Upload role auth failures artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: role-auth-failures
+          path: tests/_output/**
