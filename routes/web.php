@@ -1,113 +1,65 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\Admin\VisitorAdminController;
+use App\Http\Controllers\Marketing\MarketingController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+// Marketing Website Routes
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
+    return Inertia::render('Marketing/Landing');
+})->name('marketing.landing');
 
+Route::get('/marketing', function () {
+    return Inertia::render('Marketing/Landing');
+})->name('marketing.home');
+
+Route::get('/features', function () {
+    return Inertia::render('Marketing/Features');
+})->name('marketing.features');
+
+Route::get('/pricing', function () {
+    return Inertia::render('Marketing/Pricing');
+})->name('marketing.pricing');
+
+Route::get('/demo', function () {
+    return Inertia::render('Marketing/Demo');
+})->name('marketing.demo');
+
+// Support Pages
+Route::get('/help-center', function () {
+    return Inertia::render('Marketing/HelpCenter');
+})->name('marketing.help-center');
+
+Route::get('/documentation', function () {
+    return Inertia::render('Marketing/Documentation');
+})->name('marketing.documentation');
+
+Route::get('/privacy-policy', function () {
+    return Inertia::render('Marketing/PrivacyPolicy');
+})->name('marketing.privacy-policy');
+
+Route::get('/terms-of-service', function () {
+    return Inertia::render('Marketing/TermsOfService');
+})->name('marketing.terms-of-service');
+
+// Registration and Payment Routes
+Route::get('/register', [MarketingController::class, 'showRegister'])->name('marketing.register');
+Route::post('/register', [MarketingController::class, 'register'])->name('marketing.register.submit');
+Route::get('/payment', [MarketingController::class, 'showPayment'])->name('marketing.payment');
+Route::post('/payment/success', [MarketingController::class, 'paymentSuccess'])->name('marketing.payment.success');
+Route::get('/success/{tenant}', [MarketingController::class, 'showSuccess'])->name('marketing.success');
+
+// Application Dashboard (protected)
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
-// Token-based API login pages (SPA pages that interact with /api/* endpoints)
-Route::get('/api-login', function () {
-    return Inertia::render('Api/Login');
-})->name('api.login');
-
-Route::get('/api-dashboard', function () {
-    return Inertia::render('Api/Dashboard');
-})->name('api.dashboard');
-
-Route::get('/api-register', function () {
-    return Inertia::render('Api/Register');
-})->name('api.register');
+})->middleware(['auth'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
-    // Inertia pages for Agencies & Clients (SPA)
-    Route::get('/agencies', function () { return Inertia::render('Agencies/Index'); })->name('agencies.index');
-    Route::get('/agencies/create', function () { return Inertia::render('Agencies/Create'); })->name('agencies.create');
-    Route::get('/agencies/{id}/edit', function ($id) { return Inertia::render('Agencies/Edit', ['id' => $id]); })->name('agencies.edit');
-
-    Route::get('/clients', function () { return Inertia::render('Clients/Index'); })->name('clients.index');
-    Route::get('/clients/create', function () { return Inertia::render('Clients/Create'); })->name('clients.create');
-    Route::get('/clients/{id}/edit', function ($id) { return Inertia::render('Clients/Edit', ['id' => $id]); })->name('clients.edit');
-
-    Route::get('/employees', function () { return Inertia::render('Employees/Index'); })->name('employees.index');
-    Route::get('/employees/create', function () { return Inertia::render('Employees/Create'); })->name('employees.create');
-    Route::get('/employees/{id}/edit', function ($id) { return Inertia::render('Employees/Edit', ['id' => $id]); })->name('employees.edit');
-
-    // Visitor admin pages
-    Route::get('/admin/visitors', function () { return Inertia::render('Visitors/Index'); })->name('admin.visitors.index');
-
-    // Finance admin pages (Inertia)
-    Route::get('/admin/finance/invoices', function () { return Inertia::render('Finance/Invoices/Index'); })->name('admin.finance.invoices.index');
-
-    // Admin API for paginated visitor logs (used by Inertia page)
-    Route::get('/admin/api/visitors/logs', [VisitorAdminController::class, 'index'])
-        ->name('admin.visitors.logs');
-
-    // Plain blade fallback for manual testing
-    Route::get('/admin/visitors/plain', function (\Illuminate\Http\Request $request) {
-        $this->authorize('viewAny', App\Models\VisitLog::class);
-        $query = App\Models\VisitLog::with(['visitor', 'host'])->latest('check_in_at');
-
-        if ($request->filled('search')) {
-            $s = $request->query('search');
-            $query->whereHas('visitor', function ($q) use ($s) {
-                $q->where('name', 'like', "%{$s}%")->orWhere('email', 'like', "%{$s}%");
-            });
-        }
-
-        if ($request->filled('from')) {
-            $from = \Carbon\Carbon::parse($request->query('from'))->startOfDay();
-            $query->where('check_in_at', '>=', $from);
-        }
-
-        if ($request->filled('to')) {
-            $to = \Carbon\Carbon::parse($request->query('to'))->endOfDay();
-            $query->where('check_in_at', '<=', $to);
-        }
-
-        $logs = $query->paginate(25)->appends($request->query());
-
-        return view('admin.visitors.index', ['logs' => $logs]);
-    })->name('admin.visitors.plain');
 });
 
 require __DIR__.'/auth.php';
-
-// Public webhook endpoints (no CSRF) for external billing providers.
-// Tests and external services post to these paths: /stripe/webhook and /razorpay/webhook
-use App\Http\Controllers\Admin\BillingController;
-use App\Http\Controllers\RazorpayController;
-use App\Http\Controllers\SignupController;
-
-Route::post('/stripe/webhook', [BillingController::class, 'webhook'])
-    ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
-
-Route::post('/razorpay/webhook', [RazorpayController::class, 'webhook'])
-    ->withoutMiddleware(\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class);
-
-// Public signup pages
-Route::get('/signup', [SignupController::class, 'show'])->name('signup.show');
-Route::post('/signup', [SignupController::class, 'store'])->name('signup.store');
-Route::get('/signup/success', [SignupController::class, 'success'])->name('signup.success');
-
-// Admin routes: tenant activation (Backpack admin prefix)
-Route::match(['get', 'post'], config('backpack.base.route_prefix').'/tenant/{tenant}/activate', [\App\Http\Controllers\Admin\TenantCrudController::class, 'activate'])
-    ->name('admin.tenant.activate')
-    ->middleware(['web', 'admin']);
