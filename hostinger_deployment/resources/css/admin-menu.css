@@ -1,0 +1,173 @@
+/* Enhanced Menu Styles for Security Service SaaS */
+
+/* Menu Header Styling */
+.nav-header {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.nav-header.text-primary { border-color: #007bff; }
+.nav-header.text-success { border-color: #28a745; }
+.nav-header.text-warning { border-color: #ffc107; }
+.nav-header.text-info { border-color: #17a2b8; }
+.nav-header.text-danger { border-color: #dc3545; }
+
+/* Menu Item Enhancements */
+.nav-item .nav-link {
+    transition: all 0.3s ease;
+    border-radius: 5px;
+    margin: 2px 8px;
+    padding: 10px 16px;
+}
+
+.nav-item .nav-link:hover {
+    background-color: rgba(0,123,255,0.1);
+    transform: translateX(3px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.nav-item .nav-link.active {
+    background: linear-gradient(45deg, #007bff, #0056b3);
+    color: white;
+    box-shadow: 0 4px 8px rgba(0,123,255,0.3);
+}
+
+/* Dropdown Styling */
+.dropdown-menu {
+    border-radius: 8px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    border: none;
+    margin-top: 5px;
+}
+
+.dropdown-item {
+    padding: 12px 20px;
+    transition: all 0.2s ease;
+    border-radius: 5px;
+    margin: 2px 8px;
+}
+
+.dropdown-item:hover {
+    background: linear-gradient(45deg, #f8f9fa, #e9ecef);
+    transform: translateX(5px);
+}
+
+/* Quick Actions Group */
+.nav-item-group {
+    border-left: 4px solid #17a2b8;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    margin: 0.5rem 0;
+}
+
+.nav-item-group .nav-link {
+    font-size: 0.9rem;
+    padding: 8px 16px;
+    margin: 2px 4px;
+}
+
+/* Icon Styling */
+.nav-icon {
+    width: 20px;
+    text-align: center;
+    margin-right: 8px;
+    font-size: 1.1em;
+}
+
+.dropdown-item i {
+    width: 18px;
+    text-align: center;
+    margin-right: 8px;
+}
+
+/* Color Coding for Different Sections */
+.nav-header.text-primary + * .nav-link { border-left: 3px solid transparent; }
+.nav-header.text-success + * .nav-link { border-left: 3px solid transparent; }
+.nav-header.text-warning + * .nav-link { border-left: 3px solid transparent; }
+.nav-header.text-info + * .nav-link { border-left: 3px solid transparent; }
+.nav-header.text-danger + * .nav-link { border-left: 3px solid transparent; }
+
+.nav-header.text-primary + * .nav-link:hover { border-left-color: #007bff; }
+.nav-header.text-success + * .nav-link:hover { border-left-color: #28a745; }
+.nav-header.text-warning + * .nav-link:hover { border-left-color: #ffc107; }
+.nav-header.text-info + * .nav-link:hover { border-left-color: #17a2b8; }
+.nav-header.text-danger + * .nav-link:hover { border-left-color: #dc3545; }
+
+/* Responsive Menu Improvements */
+@media (max-width: 768px) {
+    .nav-header {
+        font-size: 0.7rem;
+        padding: 0.25rem 0.75rem;
+    }
+    
+    .nav-item .nav-link {
+        padding: 8px 12px;
+        margin: 1px 4px;
+    }
+    
+    .nav-item-group {
+        margin: 0.25rem 0;
+        padding: 1rem;
+    }
+}
+
+/* Dashboard Link Special Styling */
+.nav-item:first-child .nav-link {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.nav-item:first-child .nav-link:hover {
+    transform: translateX(3px) scale(1.02);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+}
+
+/* Dropdown Headers */
+.dropdown-header {
+    font-weight: 600;
+    color: #6c757d;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Animation for menu opening */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.nav-item {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Menu Item Counters/Badges */
+.nav-link .badge {
+    margin-left: auto;
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+}
+
+/* Focus styles for accessibility */
+.nav-link:focus,
+.dropdown-item:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+    background-color: rgba(0,123,255,0.1);
+}

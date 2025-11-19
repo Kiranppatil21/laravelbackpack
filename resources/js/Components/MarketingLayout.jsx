@@ -116,6 +116,7 @@ export default function MarketingLayout({
                                 <Link href="/" className="text-gray-600 hover:text-blue-600 transition-colors">Home</Link>
                                 <Link href="/features" className="text-gray-600 hover:text-blue-600 transition-colors">Features</Link>
                                 <Link href="/pricing" className="text-gray-600 hover:text-blue-600 transition-colors">Pricing</Link>
+                                <Link href="/careers" className="text-gray-600 hover:text-blue-600 transition-colors">Careers</Link>
                                 <Link href="/demo" className="text-gray-600 hover:text-blue-600 transition-colors">Demo</Link>
                                 <Link href="/admin" className="text-gray-600 hover:text-blue-600 transition-colors">Login</Link>
                                 <Link href="/register" className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
@@ -148,6 +149,7 @@ export default function MarketingLayout({
                             <Link href="/" className="block px-3 py-2 text-gray-600 hover:text-blue-600 transition-colors">Home</Link>
                             <Link href="/features" className="block px-3 py-2 text-gray-600 hover:text-blue-600 transition-colors">Features</Link>
                             <Link href="/pricing" className="block px-3 py-2 text-gray-600 hover:text-blue-600 transition-colors">Pricing</Link>
+                            <Link href="/careers" className="block px-3 py-2 text-gray-600 hover:text-blue-600 transition-colors">Careers</Link>
                             <Link href="/demo" className="block px-3 py-2 text-gray-600 hover:text-blue-600 transition-colors">Demo</Link>
                             <Link href="/admin" className="block px-3 py-2 text-gray-600 hover:text-blue-600 transition-colors">Login</Link>
                             <Link href="/register" className="block mx-3 mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-center">
@@ -211,8 +213,8 @@ export default function MarketingLayout({
                             <div>
                                 <h3 className="text-lg font-semibold mb-4">Company</h3>
                                 <ul className="space-y-2">
-                                    <li><a href="#" className="text-gray-300 hover:text-white transition-colors">About Us</a></li>
-                                    <li><a href="#" className="text-gray-300 hover:text-white transition-colors">Careers</a></li>
+                                    <li><Link href="/about-us" className="text-gray-300 hover:text-white transition-colors">About Us</Link></li>
+                                    <li><Link href="/careers" className="text-gray-300 hover:text-white transition-colors">Careers</Link></li>
                                     <li><a href="#" className="text-gray-300 hover:text-white transition-colors">Blog</a></li>
                                     <li><a href="#" className="text-gray-300 hover:text-white transition-colors">Press</a></li>
                                 </ul>

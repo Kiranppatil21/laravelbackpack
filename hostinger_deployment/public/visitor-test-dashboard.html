@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Visitor Management System - Test Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div x-data="visitorApp()" x-cloak>
+        <!-- Header -->
+        <div class="bg-blue-600 text-white py-4 px-6">
+            <h1 class="text-2xl font-bold">🚀 Enhanced Visitor Management System</h1>
+            <p class="text-blue-100">Test Dashboard - API Interface</p>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <div class="bg-white border-b">
+            <div class="max-w-7xl mx-auto px-6">
+                <nav class="flex space-x-8">
+                    <button @click="activeTab = 'config'" 
+                            :class="activeTab === 'config' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500'"
+                            class="py-4 px-1 border-b-2 font-medium">
+                        📱 Mobile Config
+                    </button>
+                    <button @click="activeTab = 'visitors'" 
+                            :class="activeTab === 'visitors' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500'"
+                            class="py-4 px-1 border-b-2 font-medium">
+                        👥 Visitors
+                    </button>
+                    <button @click="activeTab = 'invitations'" 
+                            :class="activeTab === 'invitations' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500'"
+                            class="py-4 px-1 border-b-2 font-medium">
+                        🎫 Invitations
+                    </button>
+                    <button @click="activeTab = 'qr'" 
+                            :class="activeTab === 'qr' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500'"
+                            class="py-4 px-1 border-b-2 font-medium">
+                        🔲 QR Codes
+                    </button>
+                    <button @click="activeTab = 'devices'" 
+                            :class="activeTab === 'devices' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500'"
+                            class="py-4 px-1 border-b-2 font-medium">
+                        🤖 IoT Devices
+                    </button>
+                    <button @click="activeTab = 'analytics'" 
+                            :class="activeTab === 'analytics' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500'"
+                            class="py-4 px-1 border-b-2 font-medium">
+                        📊 Analytics
+                    </button>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Content Area -->
+        <div class="max-w-7xl mx-auto px-6 py-8">
+            <!-- Auth Token Input -->
+            <div class="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <label class="block text-sm font-medium text-gray-700 mb-2">
+                    🔑 Authentication Token (for protected endpoints):
+                </label>
+                <input x-model="authToken" type="password" placeholder="Enter your Bearer token here..."
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p class="text-sm text-gray-600 mt-1">
+                    Get token by logging in via: <code class="bg-gray-100 px-1 rounded">POST /api/login</code>
+                </p>
+            </div>
+
+            <!-- Mobile Config Tab -->
+            <div x-show="activeTab === 'config'" class="space-y-6">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-semibold mb-4">📱 Mobile App Configuration</h2>
+                    <button @click="fetchMobileConfig()" 
+                            class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                        Get Mobile Config
+                    </button>
+                    <div x-show="mobileConfig" class="mt-4">
+                        <pre x-text="JSON.stringify(mobileConfig, null, 2)" 
+                             class="bg-gray-100 p-4 rounded text-sm overflow-auto max-h-96"></pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visitors Tab -->
+            <div x-show="activeTab === 'visitors'" class="space-y-6">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-semibold mb-4">👥 Visitor Management</h2>
+                    
+                    <!-- Create Visitor Form -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-medium mb-3">Create New Visitor</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <input x-model="newVisitor.name" placeholder="Full Name" 
+                                   class="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input x-model="newVisitor.phone" placeholder="Phone Number" 
+                                   class="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input x-model="newVisitor.email" placeholder="Email Address" 
+                                   class="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <input x-model="newVisitor.company" placeholder="Company" 
+                                   class="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <select x-model="newVisitor.purpose_of_visit" 
+                                    class="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Select Purpose</option>
+                                <option value="meeting">Business Meeting</option>
+                                <option value="interview">Job Interview</option>
+                                <option value="delivery">Delivery</option>
+                                <option value="maintenance">Maintenance</option>
+                                <option value="event">Event/Conference</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <button @click="createVisitor()" 
+                                class="mt-4 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                            Create Visitor
+                        </button>
+                    </div>
+
+                    <!-- List Visitors -->
+                    <div>
+                        <button @click="fetchVisitors()" 
+                                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4">
+                            Load Visitors
+                        </button>
+                        <div x-show="visitors.length > 0" class="overflow-x-auto">
+                            <table class="min-w-full border border-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left">Name</th>
+                                        <th class="px-4 py-2 text-left">Phone</th>
+                                        <th class="px-4 py-2 text-left">Company</th>
+                                        <th class="px-4 py-2 text-left">Purpose</th>
+                                        <th class="px-4 py-2 text-left">Code</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="visitor in visitors" :key="visitor.id">
+                                        <tr class="border-t">
+                                            <td class="px-4 py-2" x-text="visitor.name"></td>
+                                            <td class="px-4 py-2" x-text="visitor.phone"></td>
+                                            <td class="px-4 py-2" x-text="visitor.company"></td>
+                                            <td class="px-4 py-2" x-text="visitor.purpose_of_visit"></td>
+                                            <td class="px-4 py-2 font-mono text-sm" x-text="visitor.visitor_code"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- QR Code Tab -->
+            <div x-show="activeTab === 'qr'" class="space-y-6">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-semibold mb-4">🔲 QR Code Generation</h2>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Visitor Code:</label>
+                        <input x-model="qrVisitorCode" placeholder="Enter visitor code (e.g., VIS123)" 
+                               class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <button @click="generateQRCode()" 
+                            class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
+                        Generate QR Code
+                    </button>
+
+                    <div x-show="qrResult" class="mt-4">
+                        <div x-show="qrResult.success" class="p-4 bg-green-50 border border-green-200 rounded">
+                            <h4 class="font-medium text-green-800">QR Code Generated Successfully!</h4>
+                            <div class="mt-2 text-sm text-green-600">
+                                <p>Expires: <span x-text="qrResult.expires_at"></span></p>
+                                <p>QR Code data is base64 encoded</p>
+                            </div>
+                        </div>
+                        <div x-show="!qrResult.success" class="p-4 bg-red-50 border border-red-200 rounded">
+                            <h4 class="font-medium text-red-800">Error</h4>
+                            <p class="text-red-600" x-text="qrResult.message"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invitations Tab -->
+            <div x-show="activeTab === 'invitations'" class="space-y-6">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-semibold mb-4">🎫 Visitor Invitations</h2>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Check Invitations by Phone:</label>
+                        <div class="flex space-x-2">
+                            <input x-model="invitationPhone" placeholder="Phone number" 
+                                   class="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <button @click="checkInvitations()" 
+                                    class="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700">
+                                Check Invitations
+                            </button>
+                        </div>
+                    </div>
+
+                    <div x-show="invitations" class="mt-4">
+                        <div x-show="invitations.length === 0" class="p-4 bg-gray-50 border rounded">
+                            <p class="text-gray-600">No invitations found for this phone number.</p>
+                        </div>
+                        <div x-show="invitations.length > 0">
+                            <h4 class="font-medium mb-2">Found Invitations:</h4>
+                            <template x-for="invitation in invitations" :key="invitation.id">
+                                <div class="p-3 bg-blue-50 border border-blue-200 rounded mb-2">
+                                    <p><strong>Name:</strong> <span x-text="invitation.visitor_name"></span></p>
+                                    <p><strong>Company:</strong> <span x-text="invitation.company"></span></p>
+                                    <p><strong>Purpose:</strong> <span x-text="invitation.purpose"></span></p>
+                                    <p><strong>Date:</strong> <span x-text="invitation.scheduled_date"></span></p>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- IoT Devices Tab -->
+            <div x-show="activeTab === 'devices'" class="space-y-6">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-semibold mb-4">🤖 IoT Device Management</h2>
+                    
+                    <!-- Device Registration -->
+                    <div class="mb-6">
+                        <h3 class="text-lg font-medium mb-3">Register New Device</h3>
+                        <div class="grid grid-cols-3 gap-4">
+                            <input x-model="newDevice.device_name" placeholder="Device Name" 
+                                   class="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <select x-model="newDevice.device_type" 
+                                    class="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Select Type</option>
+                                <option value="tablet">Tablet</option>
+                                <option value="kiosk">Kiosk</option>
+                                <option value="scanner">Scanner</option>
+                                <option value="camera">Camera</option>
+                            </select>
+                            <input x-model="newDevice.location" placeholder="Location" 
+                                   class="px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <button @click="registerDevice()" 
+                                class="mt-4 bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+                            Register Device
+                        </button>
+                    </div>
+
+                    <!-- Device List -->
+                    <div>
+                        <button @click="fetchDevices()" 
+                                class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 mb-4">
+                            Load Devices
+                        </button>
+                        <div x-show="devices.length > 0" class="overflow-x-auto">
+                            <table class="min-w-full border border-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left">Name</th>
+                                        <th class="px-4 py-2 text-left">Type</th>
+                                        <th class="px-4 py-2 text-left">Location</th>
+                                        <th class="px-4 py-2 text-left">Status</th>
+                                        <th class="px-4 py-2 text-left">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="device in devices" :key="device.id">
+                                        <tr class="border-t">
+                                            <td class="px-4 py-2" x-text="device.device_name"></td>
+                                            <td class="px-4 py-2" x-text="device.device_type"></td>
+                                            <td class="px-4 py-2" x-text="device.location"></td>
+                                            <td class="px-4 py-2">
+                                                <span :class="device.is_active ? 'text-green-600' : 'text-red-600'"
+                                                      x-text="device.is_active ? 'Online' : 'Offline'"></span>
+                                            </td>
+                                            <td class="px-4 py-2">
+                                                <button @click="sendHeartbeat(device.id)" 
+                                                        class="text-blue-600 hover:text-blue-800 text-sm">
+                                                    Send Heartbeat
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div x-show="activeTab === 'analytics'" class="space-y-6">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-semibold mb-4">📊 Analytics Dashboard</h2>
+                    
+                    <button @click="fetchDashboard()" 
+                            class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-4">
+                        Load Dashboard Data
+                    </button>
+
+                    <div x-show="dashboardData" class="space-y-4">
+                        <div class="grid grid-cols-4 gap-4">
+                            <div class="bg-blue-50 p-4 rounded">
+                                <h4 class="font-medium text-blue-800">Active Visitors</h4>
+                                <p class="text-2xl font-bold text-blue-600" x-text="dashboardData?.stats?.active_visitors || 0"></p>
+                            </div>
+                            <div class="bg-green-50 p-4 rounded">
+                                <h4 class="font-medium text-green-800">Total Today</h4>
+                                <p class="text-2xl font-bold text-green-600" x-text="dashboardData?.stats?.total_today || 0"></p>
+                            </div>
+                            <div class="bg-yellow-50 p-4 rounded">
+                                <h4 class="font-medium text-yellow-800">Capacity</h4>
+                                <p class="text-2xl font-bold text-yellow-600" x-text="dashboardData?.capacity?.percentage || 0 + '%'"></p>
+                            </div>
+                            <div class="bg-purple-50 p-4 rounded">
+                                <h4 class="font-medium text-purple-800">Devices Online</h4>
+                                <p class="text-2xl font-bold text-purple-600" x-text="dashboardData?.devices?.online || 0"></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Response Display -->
+            <div x-show="lastResponse" class="mt-8 bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-medium mb-3">📝 Last API Response</h3>
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-sm text-gray-600">
+                        <span :class="lastResponse.status >= 200 && lastResponse.status < 300 ? 'text-green-600' : 'text-red-600'"
+                              x-text="'Status: ' + lastResponse.status"></span>
+                    </span>
+                    <button @click="lastResponse = null" class="text-gray-400 hover:text-gray-600">
+                        ✕ Close
+                    </button>
+                </div>
+                <pre x-text="JSON.stringify(lastResponse.data, null, 2)" 
+                     class="bg-gray-100 p-4 rounded text-sm overflow-auto max-h-64"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function visitorApp() {
+            return {
+                activeTab: 'config',
+                authToken: '',
+                baseUrl: 'http://127.0.0.1:8000/api',
+                
+                // Data
+                mobileConfig: null,
+                visitors: [],
+                invitations: [],
+                devices: [],
+                dashboardData: null,
+                lastResponse: null,
+                
+                // Forms
+                newVisitor: {
+                    name: '',
+                    phone: '',
+                    email: '',
+                    company: '',
+                    purpose_of_visit: ''
+                },
+                newDevice: {
+                    device_name: '',
+                    device_type: '',
+                    location: ''
+                },
+                qrVisitorCode: '',
+                qrResult: null,
+                invitationPhone: '',
+
+                // API Helper
+                async makeRequest(endpoint, options = {}) {
+                    try {
+                        const url = `${this.baseUrl}${endpoint}`;
+                        const headers = {
+                            'Accept': 'application/json',
+                            'Content-Type': 'application/json',
+                            ...options.headers
+                        };
+
+                        if (this.authToken && !options.skipAuth) {
+                            headers['Authorization'] = `Bearer ${this.authToken}`;
+                        }
+
+                        const response = await fetch(url, {
+                            ...options,
+                            headers
+                        });
+
+                        const data = await response.json();
+                        
+                        this.lastResponse = {
+                            status: response.status,
+                            data: data
+                        };
+
+                        return { response, data };
+                    } catch (error) {
+                        this.lastResponse = {
+                            status: 0,
+                            data: { error: error.message }
+                        };
+                        throw error;
+                    }
+                },
+
+                // Mobile Config
+                async fetchMobileConfig() {
+                    const { data } = await this.makeRequest('/mobile/config', { skipAuth: true });
+                    this.mobileConfig = data;
+                },
+
+                // Visitors
+                async createVisitor() {
+                    if (!this.newVisitor.name || !this.newVisitor.phone) {
+                        alert('Name and phone are required');
+                        return;
+                    }
+
+                    await this.makeRequest('/visitors', {
+                        method: 'POST',
+                        body: JSON.stringify(this.newVisitor)
+                    });
+
+                    // Reset form
+                    this.newVisitor = {
+                        name: '',
+                        phone: '',
+                        email: '',
+                        company: '',
+                        purpose_of_visit: ''
+                    };
+
+                    // Refresh list
+                    this.fetchVisitors();
+                },
+
+                async fetchVisitors() {
+                    const { data } = await this.makeRequest('/visitors');
+                    this.visitors = Array.isArray(data) ? data : (data.data || []);
+                },
+
+                // QR Codes
+                async generateQRCode() {
+                    if (!this.qrVisitorCode) {
+                        alert('Please enter a visitor code');
+                        return;
+                    }
+
+                    const { data } = await this.makeRequest('/mobile/generate-qr', {
+                        method: 'POST',
+                        body: JSON.stringify({ visitor_code: this.qrVisitorCode }),
+                        skipAuth: true
+                    });
+
+                    this.qrResult = data;
+                },
+
+                // Invitations
+                async checkInvitations() {
+                    if (!this.invitationPhone) {
+                        alert('Please enter a phone number');
+                        return;
+                    }
+
+                    const { data } = await this.makeRequest(`/mobile/invitations?phone=${encodeURIComponent(this.invitationPhone)}`, {
+                        skipAuth: true
+                    });
+
+                    this.invitations = data.invitations || [];
+                },
+
+                // Devices
+                async registerDevice() {
+                    if (!this.newDevice.device_name || !this.newDevice.device_type) {
+                        alert('Device name and type are required');
+                        return;
+                    }
+
+                    await this.makeRequest('/devices', {
+                        method: 'POST',
+                        body: JSON.stringify(this.newDevice)
+                    });
+
+                    // Reset form
+                    this.newDevice = {
+                        device_name: '',
+                        device_type: '',
+                        location: ''
+                    };
+
+                    // Refresh list
+                    this.fetchDevices();
+                },
+
+                async fetchDevices() {
+                    const { data } = await this.makeRequest('/devices');
+                    this.devices = Array.isArray(data) ? data : (data.data || []);
+                },
+
+                async sendHeartbeat(deviceId) {
+                    await this.makeRequest('/iot/heartbeat', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            device_id: deviceId,
+                            status: 'online'
+                        }),
+                        headers: {
+                            'X-API-Key': 'test-api-key-123'
+                        },
+                        skipAuth: true
+                    });
+                },
+
+                // Analytics
+                async fetchDashboard() {
+                    const { data } = await this.makeRequest('/visitor-analytics/dashboard');
+                    this.dashboardData = data;
+                }
+            }
+        }
+    </script>
+</body>
+</html>

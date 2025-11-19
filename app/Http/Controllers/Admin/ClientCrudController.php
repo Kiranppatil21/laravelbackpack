@@ -36,6 +36,15 @@ class ClientCrudController extends CrudController
     }
 
     /**
+     * Override the create method to use our custom form
+     */
+    public function create()
+    {
+        // Redirect to our custom create form
+        return redirect()->route('client.create-custom');
+    }
+
+    /**
      * Define what happens when the List operation is loaded.
      *
      * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries

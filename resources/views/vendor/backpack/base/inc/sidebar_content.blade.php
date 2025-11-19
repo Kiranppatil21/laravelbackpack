@@ -35,8 +35,36 @@
                     <p>Permissions</p>
                 </a>
             </li>
+            
+            {{-- Bulk Attendance Management --}}
+            <li class="nav-item has-treeview">
+                <a href="#" class="nav-link">
+                    <i class="nav-icon la la-calendar-check-o"></i>
+                    <p>
+                        Bulk Attendance
+                        <i class="right la la-angle-left"></i>
+                    </p>
+                </a>
+                <ul class="nav nav-treeview">
+                    <li class="nav-item">
+                        <a href="{{ route('admin.bulk-attendance.index') }}" class="nav-link">
+                            <i class="la la-plus nav-icon"></i>
+                            <p>Create Attendance</p>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ route('admin.bulk-attendance.view') }}" class="nav-link">
+                            <i class="la la-list nav-icon"></i>
+                            <p>View Records</p>
+                        </a>
+                    </li>
+                </ul>
+            </li>
         @endif
     @endif
 
     {{-- Keep adding items as needed --}}
 </ul>
+
+{{-- Include global AJAX CSRF fix for all admin pages --}}
+@include('admin.global_ajax_csrf_fix')

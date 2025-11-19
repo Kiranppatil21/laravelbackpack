@@ -1,0 +1,27 @@
+User-agent: *
+Allow: /
+
+# Sitemap Location
+Sitemap: https://secureserve.com/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1
+
+# Disallow admin areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /payment/
+
+# Allow specific paths
+Allow: /features
+Allow: /pricing
+Allow: /demo
+Allow: /register
+
+# Block specific file types
+Disallow: /*.json$
+Disallow: /*.xml$
+Disallow: /storage/
+
+# SEO-friendly paths
+Allow: /

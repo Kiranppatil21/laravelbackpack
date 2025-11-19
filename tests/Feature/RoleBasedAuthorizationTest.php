@@ -6,6 +6,7 @@ use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\User;
 use App\Models\VisitLog;
+use Illuminate\Support\Facades\Schema;
 
 class RoleBasedAuthorizationTest extends TestCase
 {
@@ -20,6 +21,12 @@ class RoleBasedAuthorizationTest extends TestCase
     public function setUp(): void
     {
         parent::setUp();
+        // If the users table isn't present (common when running a single test
+        // against an in-memory sqlite DB), run migrations so factories can create models.
+        if (! Schema::hasTable('users')) {
+            $this->artisan('migrate');
+        }
+
         $this->seed(\Database\Seeders\TestRolesSeeder::class);
     }
 
@@ -31,12 +38,21 @@ class RoleBasedAuthorizationTest extends TestCase
             // Finance
             ['method' => 'get', 'uri' => '/api/finance/invoices'],
             ['method' => 'post', 'uri' => '/api/finance/invoices', 'body' => ['issued_date' => now()->toDateString(), 'items' => [['description' => 'S', 'qty' => 1, 'unit_price' => 1, 'tax_rate' => 0]]]],
+            ['method' => 'get', 'uri' => '/api/finance/invoices/1'],
+            ['method' => 'post', 'uri' => '/api/finance/invoices/1/payments', 'body' => ['amount' => 10.0]],
             ['method' => 'post', 'uri' => '/api/finance/reports/statutory', 'body' => ['type' => 'gst', 'period_start' => now()->subMonth()->toDateString(), 'period_end' => now()->toDateString()]],
             ['method' => 'post', 'uri' => '/api/finance/reports/statutory/download', 'body' => ['type' => 'gst', 'period_start' => now()->subMonth()->toDateString(), 'period_end' => now()->toDateString()]],
             ['method' => 'get', 'uri' => '/api/finance/reports/profitability', 'body' => ['period_start' => now()->subMonth()->toDateString(), 'period_end' => now()->toDateString()]],
 
+            // Agencies / Clients
+            ['method' => 'get', 'uri' => '/api/agencies'],
+            ['method' => 'get', 'uri' => '/api/clients'],
+
             // Employees / payroll-adjacent
             ['method' => 'get', 'uri' => '/api/employees'],
+            ['method' => 'get', 'uri' => '/api/employees/1'],
+            ['method' => 'post', 'uri' => '/api/attendance/checkin', 'body' => ['employee_id' => 1]],
+            ['method' => 'post', 'uri' => '/api/attendance/checkout', 'body' => ['employee_id' => 1]],
             ['method' => 'get', 'uri' => '/api/attendance/payslips/1/download'],
         ];
 

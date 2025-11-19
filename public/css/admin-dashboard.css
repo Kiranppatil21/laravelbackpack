@@ -1,0 +1,413 @@
+/* Admin Dashboard Enhancements */
+
+/* Widget Cards */
+.admin-widget {
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    border: none;
+    overflow: hidden;
+}
+
+.admin-widget:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.admin-widget .card-body {
+    padding: 1.5rem;
+}
+
+.admin-widget .widget-icon {
+    font-size: 2.5rem;
+    opacity: 0.8;
+}
+
+.admin-widget .widget-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0.5rem 0;
+}
+
+.admin-widget .widget-trend {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.admin-widget .widget-trend.positive {
+    color: #28a745;
+}
+
+.admin-widget .widget-trend.negative {
+    color: #dc3545;
+}
+
+/* Quick Action Buttons */
+.quick-action-btn {
+    padding: 1rem;
+    border-radius: 10px;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: block;
+    text-align: center;
+}
+
+.quick-action-btn:hover {
+    border-color: #007bff;
+    background: rgba(0,123,255,0.05);
+    transform: translateY(-2px);
+    text-decoration: none;
+}
+
+/* Dashboard Charts */
+.chart-container {
+    position: relative;
+    height: 300px;
+    padding: 1rem;
+}
+
+.chart-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #495057;
+}
+
+/* Activity Feed */
+.activity-feed {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.activity-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    align-items: center;
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    font-size: 1.1rem;
+}
+
+.activity-icon.success {
+    background: rgba(40,167,69,0.1);
+    color: #28a745;
+}
+
+.activity-icon.info {
+    background: rgba(0,123,255,0.1);
+    color: #007bff;
+}
+
+.activity-icon.warning {
+    background: rgba(255,193,7,0.1);
+    color: #ffc107;
+}
+
+.activity-icon.danger {
+    background: rgba(220,53,69,0.1);
+    color: #dc3545;
+}
+
+.activity-content {
+    flex: 1;
+}
+
+.activity-title {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.25rem;
+}
+
+.activity-time {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* Notification Enhancements */
+.notification-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #dc3545;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    z-index: 10;
+}
+
+.notification-dropdown {
+    width: 380px;
+    max-height: 500px;
+    overflow-y: auto;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    border-radius: 12px;
+}
+
+.notification-item {
+    padding: 1rem;
+    border-bottom: 1px solid #f1f3f4;
+    transition: background-color 0.2s ease;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem;
+    font-weight: 600;
+}
+
+/* Enhanced Table Styling */
+.table-enhanced {
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+}
+
+.table-enhanced thead th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    border: none;
+    padding: 1rem 0.75rem;
+}
+
+.table-enhanced tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table-enhanced tbody tr:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.01);
+}
+
+.table-enhanced .btn {
+    border-radius: 20px;
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.pending {
+    background: rgba(255,193,7,0.2);
+    color: #856404;
+}
+
+.status-badge.completed {
+    background: rgba(40,167,69,0.2);
+    color: #155724;
+}
+
+.status-badge.in-progress {
+    background: rgba(0,123,255,0.2);
+    color: #004085;
+}
+
+.status-badge.rejected {
+    background: rgba(220,53,69,0.2);
+    color: #721c24;
+}
+
+/* Custom Theme Colors */
+.bg-gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.bg-gradient-success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.bg-gradient-info {
+    background: linear-gradient(135deg, #667eea 0%, #f093fb 100%);
+}
+
+.bg-gradient-warning {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.bg-gradient-danger {
+    background: linear-gradient(135deg, #ff6a00 0%, #ee0979 100%);
+}
+
+/* Security Guard Theme Elements */
+.security-shield {
+    color: #007bff;
+    font-size: 1.2rem;
+    margin-right: 0.5rem;
+}
+
+.guard-status-online {
+    color: #28a745;
+    font-weight: 600;
+}
+
+.guard-status-offline {
+    color: #6c757d;
+    font-weight: 600;
+}
+
+.guard-status-incident {
+    color: #ffc107;
+    font-weight: 600;
+}
+
+/* Dashboard Header */
+.dashboard-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    border-radius: 0 0 20px 20px;
+}
+
+.dashboard-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-subtitle {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .admin-widget {
+        margin-bottom: 1rem;
+    }
+    
+    .notification-dropdown {
+        width: 320px;
+    }
+    
+    .widget-value {
+        font-size: 1.5rem !important;
+    }
+    
+    .dashboard-title {
+        font-size: 2rem !important;
+    }
+    
+    .chart-container {
+        height: 250px;
+    }
+}
+
+@media (max-width: 576px) {
+    .notification-dropdown {
+        width: 280px;
+    }
+    
+    .admin-widget .card-body {
+        padding: 1rem;
+    }
+    
+    .activity-icon {
+        width: 35px;
+        height: 35px;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .admin-widget {
+        box-shadow: none;
+        border: 1px solid #dee2e6;
+    }
+    
+    .notification-dropdown,
+    .quick-action-btn,
+    .btn {
+        display: none !important;
+    }
+    
+    .chart-container {
+        page-break-inside: avoid;
+    }
+}
+
+/* Loading States */
+.loading-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Accessibility */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Focus indicators */
+.admin-widget:focus,
+.quick-action-btn:focus,
+.notification-item:focus {
+    outline: 3px solid rgba(0, 123, 255, 0.25);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .admin-widget {
+        border: 2px solid;
+    }
+    
+    .status-badge {
+        border: 1px solid currentColor;
+    }
+}

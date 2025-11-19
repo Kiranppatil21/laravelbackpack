@@ -19,6 +19,10 @@ Route::get('/features', function () {
     return Inertia::render('Marketing/Features');
 })->name('marketing.features');
 
+Route::get('/test', function () {
+    return Inertia::render('Test');
+})->name('test.page');
+
 Route::get('/pricing', function () {
     return Inertia::render('Marketing/Pricing');
 })->name('marketing.pricing');
@@ -26,6 +30,41 @@ Route::get('/pricing', function () {
 Route::get('/demo', function () {
     return Inertia::render('Marketing/Demo');
 })->name('marketing.demo');
+
+Route::get('/about-us', function () {
+    return Inertia::render('Marketing/AboutUs');
+})->name('marketing.about-us');
+
+Route::get('/careers', function () {
+    $jobOpenings = \App\Models\CompanyJobOpening::active()
+        ->byPriority()
+        ->get()
+        ->map(function ($job) {
+            return [
+                'id' => $job->id,
+                'title' => $job->title,
+                'department' => $job->department,
+                'location' => $job->location,
+                'type' => $job->type,
+                'experience_level' => $job->experience_level,
+                'description' => $job->description,
+                'requirements' => $job->requirements,
+                'salary_range' => $job->salary_range,
+                'posted_ago' => $job->posted_ago,
+                'application_deadline' => $job->application_deadline?->format('M d, Y'),
+                'contact_email' => $job->contact_email,
+            ];
+        });
+
+    $departments = \App\Models\CompanyJobOpening::getDepartments()->values()->toArray();
+    $locations = \App\Models\CompanyJobOpening::getLocations()->values()->toArray();
+
+    return Inertia::render('Marketing/Careers', [
+        'jobOpenings' => $jobOpenings,
+        'departments' => $departments,
+        'locations' => $locations,
+    ]);
+})->name('marketing.careers');
 
 // Support Pages
 Route::get('/help-center', function () {
@@ -63,3 +102,19 @@ Route::middleware('auth')->group(function () {
 });
 
 require __DIR__.'/auth.php';
+
+// Test route for employee form
+Route::get('/test-employee-form', function () {
+    $controller = app()->make('\App\Http\Controllers\Admin\EmployeeCrudController');
+    $controller->setup();
+    
+    // Manually set up the CRUD context
+    $controller->crud->setOperation('create');
+    
+    try {
+        $controller->setupCreateOperation();
+        return "✅ Employee form setup works correctly!";
+    } catch (Exception $e) {
+        return "❌ Error: " . $e->getMessage() . "\nFile: " . $e->getFile() . ":" . $e->getLine();
+    }
+});
