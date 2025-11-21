@@ -5,9 +5,47 @@
 
 echo "🚀 Setting up Laravel Backpack project..."
 
+# Check for required dependencies
+echo "🔍 Checking system requirements..."
+
+# Check PHP
+if ! command -v php &> /dev/null; then
+    echo "❌ PHP is not installed. Please install PHP 8.1+ first."
+    exit 1
+fi
+
+# Check Composer
+if ! command -v composer &> /dev/null; then
+    echo "❌ Composer is not installed. Please install Composer first."
+    echo "   macOS: brew install composer"
+    echo "   Windows: https://getcomposer.org/download/"
+    echo "   Linux: curl -sS https://getcomposer.org/installer | php"
+    exit 1
+fi
+
+# Check Node.js
+if ! command -v npm &> /dev/null; then
+    echo "❌ Node.js/NPM is not installed. Please install Node.js first."
+    exit 1
+fi
+
+echo "✅ All required dependencies found!"
+
 # Install PHP dependencies
 echo "📦 Installing PHP dependencies..."
-composer install
+if composer install; then
+    echo "✅ PHP dependencies installed successfully"
+else
+    echo "❌ Failed to install PHP dependencies"
+    echo "   Make sure you have internet connection and Composer is properly installed"
+    exit 1
+fi
+
+# Verify autoload.php was created
+if [ ! -f vendor/autoload.php ]; then
+    echo "❌ autoload.php was not created. Running composer dump-autoload..."
+    composer dump-autoload
+fi
 
 # Install Node.js dependencies  
 echo "📦 Installing Node.js dependencies..."
