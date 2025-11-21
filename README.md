@@ -1,30 +1,124 @@
-# laravelbackpack
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🚀 SecureServe SaaS - Employee Management System
 
-## Visitor check-in (Phase 5) — quick notes
+[![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20.svg)](https://laravel.com)
+[![PHP](https://img.shields.io/badge/PHP-8.1+-777BB4.svg)](https://php.net)
+[![Backpack](https://img.shields.io/badge/Backpack-6.8.6-orange.svg)](https://backpackforlaravel.com)
 
-- Endpoint: POST /api/visitors/checkin
-- Protection: supports either a simple API key header or HMAC-signed payloads. The middleware will accept:
-	- `X-VISITOR-API-KEY` (simple shared secret), or
-	- `X-VISITOR-TIMESTAMP` and `X-VISITOR-SIGNATURE` where signature = HMAC-SHA256(timestamp + '|' + raw_body, VISITOR_HMAC_SECRET)
+## 📋 Overview
 
-### Adding secrets (GitHub Actions)
+SecureServe is a comprehensive multi-tenant SaaS application for security services management, built with Laravel Backpack. Perfect for security agencies managing employees, clients, attendance, and payroll across multiple locations.
 
-1. Go to your repository Settings → Secrets → Actions
-2. Add `VISITOR_API_KEY` (optional if you prefer HMAC only) with a strong random value.
-3. Add `VISITOR_HMAC_SECRET` (optional if you prefer API key only) with a strong random value.
+## ✨ Key Features
 
-At least one of `VISITOR_API_KEY` or `VISITOR_HMAC_SECRET` must be set for CI workflows to run.
+- 🏢 **Multi-tenant Architecture** - Complete database separation per tenant
+- 👥 **Employee Management** - CRUD operations with client assignments
+- 📅 **Advanced Attendance System** - Bulk operations with shift tracking (S1, S2, S3)
+- ⏰ **Overtime Management** - Built-in OT tracking and calculations  
+- 💰 **Payroll Processing** - Automated salary calculations and payslips
+- 🏬 **Client Management** - Multiple site locations and contracts
+- 📊 **Comprehensive Reporting** - Attendance reports and invoicing
+- 🔐 **Role-Based Access Control** - 7 user roles with granular permissions
+- 📱 **Responsive Interface** - Works seamlessly on all devices
+- 🎨 **Modern UI** - Clean, intuitive design with Bootstrap styling
 
-### Queue worker in CI
+## 🎯 Perfect For
 
-- CI now starts a background `php artisan queue:work` using the `database` queue driver so queued notifications (like host emails) are processed during runs. If you prefer to run the worker differently, update the workflow steps in `.github/workflows/*`.
+- Security service companies
+- Guard service providers  
+- Employee management agencies
+- Multi-location businesses
+- Any organization needing robust attendance tracking
 
-### Local testing
+## 🚀 Quick Start
 
-- For local development you can leave both secrets unset — the middleware is a no-op locally. To test signing locally set `VISITOR_HMAC_SECRET` and use the example scripts in `/scripts`:
-	- `scripts/sign-node.js` (Node.js)
-	- `scripts/sign-python.py` (Python)
+### One-Command Setup
+```bash
+git clone https://github.com/Kiranppatil21/laravelbackpack.git
+cd laravelbackpack
+git checkout ci/run-rbac-rerun
+./transfer-setup.sh
+php artisan serve
+```
+
+### Manual Installation
+```bash
+# 1. Clone repository
+git clone https://github.com/Kiranppatil21/laravelbackpack.git
+cd laravelbackpack
+git checkout ci/run-rbac-rerun
+
+# 2. Install dependencies
+composer install
+npm install
+
+# 3. Environment setup
+cp .env.example .env
+php artisan key:generate
+
+# 4. Database setup
+touch database/database.sqlite
+php artisan migrate --seed
+
+# 5. Build assets
+npm run build
+
+# 6. Start development server
+php artisan serve
+```
+
+## 🔑 Default Access Credentials
+
+- **Admin Panel**: http://localhost:8000/admin
+- **Username**: admin@example.com
+- **Password**: password123
+
+## 📋 System Requirements
+
+- **PHP**: 8.1 or higher with SQLite extension
+- **Composer**: Latest version
+- **Node.js**: 16+ with NPM
+- **Database**: SQLite (default) or MySQL/PostgreSQL
+- **Web Server**: Apache/Nginx (for production)
+
+## 🏗️ Architecture Overview
+
+```
+SecureServe SaaS Architecture
+├── 🏢 Multi-tenant Database Separation
+├── 👥 Employee Management Module
+├── 📅 Bulk Attendance System
+├── 💰 Payroll Processing Engine
+├── 🏬 Client & Site Management
+├── 📊 Reporting & Analytics
+└── 🔐 Security & Access Control
+```
+
+## 🛠️ Technology Stack
+
+- **Framework**: Laravel 12
+- **Admin Panel**: Backpack CRUD 6.8.6
+- **Frontend**: Blade Templates + Bootstrap 5
+- **Database**: SQLite with multi-tenancy support
+- **Authentication**: Laravel Breeze + Spatie Permissions
+- **Multi-tenancy**: stancl/tenancy package
+- **Payment Processing**: Razorpay integration
+- **Asset Building**: Vite + NPM
+
+## 📖 Documentation
+
+- 📋 [Transfer Guide](TRANSFER_GUIDE.md) - Setup instructions for new systems
+- 🛠️ [Troubleshooting Guide](TROUBLESHOOTING.md) - Common issues and solutions
+- 🔧 [Development Notes](README.DEV.md) - Advanced configuration options
+
+## 🎭 User Roles & Permissions
+
+- **Super Admin** - Full system access
+- **Agency Owner** - Tenant management
+- **HR Manager** - Employee and payroll management  
+- **Client** - View assigned employees and reports
+- **Security Guard** - Basic attendance and profile access
+- **Supervisor** - Team management capabilities
+- **Police/Visitor** - Limited access for verification
 
 <p align="center">
 <a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
