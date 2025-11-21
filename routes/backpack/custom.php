@@ -107,6 +107,11 @@ Route::group([
     // Company Job Openings Management (Backpack CRUD)
     Route::crud('company-job-openings', 'CompanyJobOpeningCrudController');
     // Payslip management via Backpack CRUD
+    // Test route for debugging AJAX issues
+    Route::get('test-ajax', function() {
+        return view('admin.test-ajax');
+    })->name('admin.test.ajax');
+
     Route::crud('payslip', 'PayslipCrudController');
     
     // Bulk Attendance Management
@@ -117,6 +122,7 @@ Route::group([
         Route::get('view', 'BulkAttendanceController@view')->name('view');
         Route::get('{id}/show', 'BulkAttendanceController@show')->name('show');
         Route::delete('{id}', 'BulkAttendanceController@destroy')->name('destroy');
+        Route::delete('delete', 'BulkAttendanceController@deleteBulk')->name('delete-bulk');
     });
     Route::crud('client-invoice', 'ClientInvoiceCrudController');
     
@@ -132,6 +138,13 @@ Route::group([
         Route::get('{id}/preview-id-card', 'EmployeeCrudController@previewIdCard')->name('preview-id-card');
         Route::get('{id}/preview-data', 'EmployeeCrudController@getPreviewData')->name('preview-data');
         Route::post('bulk-generate-id-cards', 'EmployeeCrudController@bulkGenerateIdCards')->name('bulk-generate-id-cards');
+        Route::post('bulk-assign-client', 'EmployeeCrudController@bulkAssignClient')->name('bulk-assign-client');
+    });
+    
+    // API routes for bulk assignment
+    Route::group(['prefix' => 'api', 'as' => 'admin.api.'], function () {
+        Route::get('clients', 'EmployeeCrudController@getClientsApi')->name('clients');
+        Route::get('employees', 'EmployeeCrudController@getEmployeesApi')->name('employees');
     });
 }); // this should be the absolute last line of this file
 

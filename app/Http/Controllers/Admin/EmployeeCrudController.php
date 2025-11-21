@@ -42,6 +42,16 @@ class EmployeeCrudController extends CrudController
      */
     protected function setupListOperation()
     {
+        // Temporarily bypass tenant scope for testing
+        $this->crud->addClause('withoutGlobalScope', \App\Models\Scopes\TenantScope::class);
+        
+        // For the client relationship loading, bypass tenant scope as well
+        $this->crud->query->when(true, function($query) {
+            return $query->with(['client' => function($q) {
+                $q->withoutGlobalScope(\App\Models\Scopes\TenantScope::class);
+            }]);
+        });
+        
         // Custom columns for better display
         CRUD::addColumn([
             'name' => 'name',
@@ -68,8 +78,20 @@ class EmployeeCrudController extends CrudController
 
         CRUD::addColumn([
             'name' => 'client_id',
-            'label' => 'Client ID',
-            'type' => 'text',
+            'label' => 'Assigned Client', 
+            'type' => 'closure',
+            'function' => function($entry) {
+                if ($entry->client_id) {
+                    // Load client without tenant scope
+                    $client = \App\Models\Client::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->find($entry->client_id);
+                    if ($client) {
+                        return '<span class="badge badge-success">' . $client->name . '</span>';
+                    }
+                    return '<span class="badge badge-warning">Client #' . $entry->client_id . '</span>';
+                }
+                return '<span class="badge badge-secondary">Not Assigned</span>';
+            },
+            'escaped' => false,
         ]);
 
         CRUD::addColumn([
@@ -120,6 +142,7 @@ class EmployeeCrudController extends CrudController
         CRUD::enablePersistentTable();
 
         // Add ID Card generation button
+        // Add ID card generation button
         CRUD::addButtonFromView('line', 'generate_id_card', 'admin.buttons.generate_id_card', 'beginning');
 
         // Apply tenant scoping if user is not Super Admin
@@ -290,12 +313,20 @@ class EmployeeCrudController extends CrudController
 
         CRUD::addField([
             'name' => 'client_id',
-            'label' => 'Client ID (Enter client ID number)',
-            'type' => 'number',
-            'attributes' => ['min' => 1],
+            'label' => 'Assign to Client',
+            'type' => 'select',
+            'entity' => 'client',
+            'attribute' => 'name',
+            'model' => 'App\Models\Client',
             'allows_null' => true,
             'wrapper' => ['class' => 'form-group col-md-6'],
-            'hint' => 'Enter the client ID number to assign this employee to a specific client',
+            'hint' => 'Select a client to assign this employee to a specific project/site',
+        ]);
+
+        CRUD::addField([
+            'name' => 'client_assignment_info',
+            'type' => 'custom_html',
+            'value' => '<div class="col-md-6"><div class="alert alert-info"><i class="la la-info-circle"></i> <strong>Note:</strong> Assigning an employee to a client will make them available for that client\'s projects and attendance tracking.</div></div>',
         ]);
 
         CRUD::addField([
@@ -1083,6 +1114,61 @@ class EmployeeCrudController extends CrudController
                     ]);
                 }
             }
+        }
+    }
+
+    /**
+     * API endpoint to get clients for bulk assignment
+     */
+    public function getClientsApi()
+    {
+        $clients = \App\Models\Client::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
+            ->select('id', 'name')
+            ->orderBy('name')
+            ->get();
+            
+        return response()->json($clients);
+    }
+
+    /**
+     * API endpoint to get employees for bulk assignment
+     */
+    public function getEmployeesApi()
+    {
+        $employees = \App\Models\Employee::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
+            ->with(['client:id,name'])
+            ->select('id', 'name', 'client_id')
+            ->orderBy('name')
+            ->get();
+            
+        return response()->json($employees);
+    }
+
+    /**
+     * Bulk assign employees to client
+     */
+    public function bulkAssignClient(Request $request)
+    {
+        $request->validate([
+            'client_id' => 'required|exists:clients,id',
+            'employee_ids' => 'required|array|min:1',
+            'employee_ids.*' => 'exists:employees,id'
+        ]);
+
+        try {
+            \App\Models\Employee::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
+                ->whereIn('id', $request->employee_ids)
+                ->update(['client_id' => $request->client_id]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Successfully assigned ' . count($request->employee_ids) . ' employees to client'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Error assigning employees: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

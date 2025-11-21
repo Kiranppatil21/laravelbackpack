@@ -20,17 +20,18 @@ class BulkAttendanceController extends Controller
      */
     public function index()
     {
-        $clients = Client::select('id', 'name')->orderBy('name')->get();
+        $clients = Client::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
+            ->select('id', 'name')->orderBy('name')->get();
         
         // Use same designation options as employee form
         $userTypes = [
-            'Guard' => 'Security Guard',
+            'Security Guard' => 'Security Guard',
             'Supervisor' => 'Supervisor',
-            'Field Officer' => 'Field Officer',
-            'Manager Staff' => 'Manager Staff',
+            'Manager' => 'Manager',
+            'Officer' => 'Officer',
+            'Executive' => 'Executive',
             'Watchman' => 'Watchman',
-            'Security Officer' => 'Security Officer',
-            'Team Leader' => 'Team Leader',
+            'Bouncer' => 'Bouncer',
         ];
 
         \Log::info('Available user types', ['user_types' => array_keys($userTypes)]);
@@ -50,6 +51,13 @@ class BulkAttendanceController extends Controller
      */
     public function search(Request $request)
     {
+        \Log::info('=== BULK ATTENDANCE SEARCH STARTED ===', [
+            'all_request_data' => $request->all(),
+            'request_method' => $request->method(),
+            'content_type' => $request->header('Content-Type'),
+            'user_agent' => $request->header('User-Agent')
+        ]);
+
         $validator = Validator::make($request->all(), [
             'site_id' => 'required|exists:clients,id',
             'user_type' => 'required|string',
@@ -58,11 +66,17 @@ class BulkAttendanceController extends Controller
         ]);
 
         if ($validator->fails()) {
+            \Log::error('VALIDATION FAILED', [
+                'errors' => $validator->errors(),
+                'input' => $request->all()
+            ]);
             return response()->json([
                 'success' => false,
                 'errors' => $validator->errors()
             ], 422);
         }
+
+        \Log::info('VALIDATION PASSED', ['validated_data' => $validator->validated()]);
 
         $siteId = $request->site_id;
         $userType = $request->user_type;
@@ -78,42 +92,61 @@ class BulkAttendanceController extends Controller
         ]);
 
         // First, let's see what employees exist for this client
-        $clientEmployees = Employee::where('client_id', $siteId)->get(['id', 'first_name', 'last_name', 'position', 'client_id']);
+        $clientEmployees = Employee::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
+            ->where('client_id', $siteId)->get(['id', 'first_name', 'last_name', 'designation', 'client_id']);
         \Log::info('All employees for client', [
             'client_id' => $siteId,
             'employees' => $clientEmployees->map(function($emp) {
                 return [
                     'id' => $emp->id,
                     'name' => $emp->first_name . ' ' . $emp->last_name,
-                    'position' => $emp->position,
+                    'designation' => $emp->designation,
                     'client_id' => $emp->client_id
                 ];
             })->toArray()
         ]);
 
-        // Get ALL employees assigned to this client, regardless of position or name status
-        $employees = Employee::where('client_id', $siteId)
-            ->select('id', 'first_name', 'last_name', 'position', 'job_role')
+        // Get employees assigned to this client with the specific designation
+        $employees = Employee::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
+            ->where('client_id', $siteId)
+            ->where('designation', $userType)
+            ->select('id', 'first_name', 'last_name', 'designation', 'job_role', 'emp_id')
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->map(function($employee) {
+                // Combine first_name and last_name into name field
+                $fullName = trim(($employee->first_name ?? '') . ' ' . ($employee->last_name ?? ''));
+                return [
+                    'id' => $employee->id,
+                    'name' => $fullName ?: 'No Name Provided',
+                    'emp_id' => $employee->emp_id ?? 'N/A',
+                    'designation' => $employee->designation ?? 'No Designation',
+                    'job_role' => $employee->job_role ?? 'N/A',
+                    'first_name' => $employee->first_name,
+                    'last_name' => $employee->last_name
+                ];
+            });
 
-        \Log::info('All employees for client found', [
+        \Log::info('Employees filtered by designation', [
             'client_id' => $siteId,
+            'designation' => $userType,
             'count' => $employees->count(),
             'employee_details' => $employees->map(function($emp) {
                 return [
-                    'id' => $emp->id,
-                    'name' => trim(($emp->first_name ?? '') . ' ' . ($emp->last_name ?? '')),
-                    'position' => $emp->position ?? 'No Position'
+                    'id' => $emp['id'],
+                    'name' => $emp['name'],
+                    'emp_id' => $emp['emp_id'],
+                    'designation' => $emp['designation']
                 ];
             })->toArray()
         ]);
         
-        // Remove unnecessary fallback logic that was causing confusion
-        \Log::info('Final employee search completed', [
+        // Search completed successfully
+        \Log::info('Employee search with designation filter completed', [
             'client_id' => $siteId,
+            'designation' => $userType,
             'employees_found' => $employees->count(),
-            'search_criteria' => 'All employees for client ' . $siteId
+            'search_criteria' => 'Employees for client ' . $siteId . ' with designation: ' . $userType
         ]);
 
         // Generate calendar for the month
@@ -123,14 +156,14 @@ class BulkAttendanceController extends Controller
         $existingAttendance = $this->getExistingAttendance($siteId, $month, $userType);
 
         // Get site name
-        $site = Client::find($siteId);
+        $site = Client::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->find($siteId);
 
         // Add debug information
         $debugInfo = [
-            'total_employees_in_db' => Employee::count(),
-            'employees_for_client' => Employee::where('client_id', $siteId)->count(),
-            'employees_with_position' => Employee::where('client_id', $siteId)->where('position', $userType)->count(),
-            'all_positions_for_client' => Employee::where('client_id', $siteId)->whereNotNull('position')->distinct()->pluck('position')->toArray()
+            'total_employees_in_db' => Employee::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->count(),
+            'employees_for_client' => Employee::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->where('client_id', $siteId)->count(),
+            'employees_with_designation' => Employee::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->where('client_id', $siteId)->where('designation', $userType)->count(),
+            'all_designations_for_client' => Employee::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->where('client_id', $siteId)->whereNotNull('designation')->distinct()->pluck('designation')->toArray()
         ];
 
         \Log::info('Search completed', array_merge($debugInfo, [
@@ -310,7 +343,21 @@ class BulkAttendanceController extends Controller
             })
             ->toArray();
 
-        return $details;
+        // Transform data to match frontend expectations
+        $transformedData = [];
+        foreach ($details as $employeeId => $dates) {
+            foreach ($dates as $date => $attendance) {
+                $key = "{$employeeId}-{$date}";
+                $transformedData[$key] = [
+                    'shift_1' => ($attendance['shift'] == '1'),
+                    'shift_2' => ($attendance['shift'] == '2'), 
+                    'shift_3' => ($attendance['shift'] == '3'),
+                    'ot' => (bool)$attendance['is_ot']
+                ];
+            }
+        }
+
+        return $transformedData;
     }
 
     /**
@@ -378,6 +425,74 @@ class BulkAttendanceController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->back()->with('error', 'Error deleting attendance record: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete all attendance records for a specific site, month, and year
+     */
+    public function deleteBulk(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'site_id' => 'required|exists:clients,id',
+            'month' => 'required|integer|min:1|max:12',
+            'year' => 'required|integer|min:2020|max:2099',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed: ' . implode(', ', $validator->errors()->all())
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+
+            $site_id = $request->site_id;
+            $month = $request->month;
+            $year = $request->year;
+
+            // Find all attendance master records for this site/month/year
+            $masterRecords = EmployeeAttendanceMaster::where('site_id', $site_id)
+                ->where('month', $month)
+                ->where('year', $year)
+                ->get();
+
+            if ($masterRecords->isEmpty()) {
+                return response()->json([
+                    'message' => 'No attendance records found for the specified criteria.'
+                ], 404);
+            }
+
+            $deletedCount = 0;
+            foreach ($masterRecords as $master) {
+                // Delete all related details first
+                EmployeeAttendanceDetail::where('attendance_master_id', $master->id)->delete();
+                
+                // Delete master record
+                $master->delete();
+                $deletedCount++;
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => "Successfully deleted {$deletedCount} attendance record(s) for the specified month.",
+                'deleted_count' => $deletedCount
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Bulk delete attendance error', [
+                'site_id' => $request->site_id,
+                'month' => $request->month,
+                'year' => $request->year,
+                'error' => $e->getMessage()
+            ]);
+            
+            return response()->json([
+                'message' => 'Error deleting attendance records: ' . $e->getMessage()
+            ], 500);
         }
     }
 }

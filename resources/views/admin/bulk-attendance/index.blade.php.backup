@@ -1,0 +1,1171 @@
+@extends(backpack_view('blank'))
+
+@push('before_styles')
+<meta name="csrf-token" content="{{ csrf_token() }}">
+@endpush
+
+@php
+  $defaultBreadcrumbs = [
+    'Admin' => url(config('backpack.base.route_prefix'), 'dashboard'),
+    'Bulk Attendance' => false,
+  ];
+  $breadcrumbs = $breadcrumbs ?? $defaultBreadcrumbs;
+@endphp
+
+@section('header')
+<section class="container-fluid">
+  <h2>
+    <span class="text-capitalize">Allocate Employee To Client - Bulk Attendance</span>
+    <small>Raj Security Services</small>
+  </h2>
+</section>
+@endsection
+
+@section('content')
+<div class="row">
+    <div class="col-md-12">
+        
+        {{-- Information Alert --}}
+        <div class="alert alert-info">
+            <h5><i class="la la-info-circle"></i> Client Assignment Feature</h5>
+            <p class="mb-2">📍 <strong>Employee-Client Assignment:</strong> Employees can now be assigned to specific client locations during registration.</p>
+            <p class="mb-2">🔍 <strong>Smart Filtering:</strong> When you select a site, only employees assigned to that client will be shown for attendance marking.</p>
+            <p class="mb-0">⚙️ <strong>To assign employees:</strong> Go to <strong>Admin → Employees → Edit Employee</strong> and select a client in the "Client Assignment" section.</p>
+        </div>
+        
+        {{-- Header Section - Allocation Filters --}}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Attendance Management</h3>
+            </div>
+            <div class="card-body">
+                <form id="attendance-search-form" class="row g-3">
+                    {{-- Site Selection --}}
+                    <div class="col-md-3">
+                        <label for="site_id" class="form-label"><strong>Site Name *</strong></label>
+                        <select id="site_id" name="site_id" class="form-control" required>
+                            <option value="">Select Site</option>
+                            @foreach($clients as $client)
+                                <option value="{{ $client->id }}">{{ $client->name }}</option>
+                            @endforeach
+                        </select>
+                        <small class="text-muted">Only employees assigned to this client will be shown</small>
+                    </div>
+
+                    {{-- Employee Designation Selection --}}
+                    <div class="col-md-3">
+                        <label for="user_type" class="form-label"><strong>Employee Designation *</strong></label>
+                        <select id="user_type" name="user_type" class="form-control" required>
+                            <option value="">Select Designation</option>
+                            @foreach($userTypes as $key => $type)
+                                <option value="{{ $key }}">{{ $type }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    {{-- Month Selection --}}
+                    <div class="col-md-3">
+                        <label for="month" class="form-label"><strong>Month & Year Selection *</strong></label>
+                        <div class="row">
+                            <div class="col-6">
+                                <select id="month_select" name="month_select" class="form-control" required>
+                                    <option value="01" {{ date('m') == '01' ? 'selected' : '' }}>January</option>
+                                    <option value="02" {{ date('m') == '02' ? 'selected' : '' }}>February</option>
+                                    <option value="03" {{ date('m') == '03' ? 'selected' : '' }}>March</option>
+                                    <option value="04" {{ date('m') == '04' ? 'selected' : '' }}>April</option>
+                                    <option value="05" {{ date('m') == '05' ? 'selected' : '' }}>May</option>
+                                    <option value="06" {{ date('m') == '06' ? 'selected' : '' }}>June</option>
+                                    <option value="07" {{ date('m') == '07' ? 'selected' : '' }}>July</option>
+                                    <option value="08" {{ date('m') == '08' ? 'selected' : '' }}>August</option>
+                                    <option value="09" {{ date('m') == '09' ? 'selected' : '' }}>September</option>
+                                    <option value="10" {{ date('m') == '10' ? 'selected' : '' }}>October</option>
+                                    <option value="11" {{ date('m') == '11' ? 'selected' : '' }}>November</option>
+                                    <option value="12" {{ date('m') == '12' ? 'selected' : '' }}>December</option>
+                                </select>
+                                <small class="text-muted">Month</small>
+                            </div>
+                            <div class="col-6">
+                                <select id="year_select" name="year_select" class="form-control" required>
+                                    @for($year = date('Y') - 2; $year <= date('Y') + 1; $year++)
+                                        <option value="{{ $year }}" {{ date('Y') == $year ? 'selected' : '' }}>{{ $year }}</option>
+                                    @endfor
+                                </select>
+                                <small class="text-muted">Year</small>
+                            </div>
+                        </div>
+                        <input type="hidden" id="month" name="month" value="{{ date('Y-m') }}">
+                    </div>
+
+                    {{-- Shift Selection Checkboxes (moved inside form) --}}
+                    <div class="col-md-12">
+                        <label class="form-label"><strong>Shift Selection</strong></label>
+                        <div class="d-flex gap-3 mb-3">
+                            @foreach($shifts as $key => $shift)
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="shifts[]" 
+                                           value="{{ $key }}" id="shift_{{ $key }}" checked>
+                                    <label class="form-check-label" for="shift_{{ $key }}">
+                                        {{ $shift }}
+                                    </label>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    {{-- Search Button --}}
+                    <div class="col-md-12 text-center">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="la la-search"></i> Search Employees
+                        </button>
+                        <button type="button" class="btn btn-info me-2" id="debug-btn">
+                            <i class="la la-bug"></i> Debug
+                        </button>
+                        <button type="button" class="btn btn-success" id="allocate-btn" disabled>
+                            <i class="la la-users"></i> Allocate
+                        </button>
+                        <button type="button" class="btn btn-secondary me-2" id="clear-form-btn">
+                            <i class="la la-refresh"></i> Clear Form
+                        </button>
+                    </div>
+                    
+                    {{-- Form Status Indicator --}}
+                    <div class="col-md-12 text-center mt-2">
+                        <small id="form-status" class="text-muted" style="display: none;">
+                            <i class="la la-check-circle text-success"></i> Form values preserved after search
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Loading Spinner --}}
+        <div id="loading-spinner" class="text-center mt-3" style="display: none;">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading employees and calendar...</p>
+        </div>
+
+        {{-- Attendance Table --}}
+        <div id="attendance-section" class="card mt-3" style="display: none;">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title">Attendance Grid</h3>
+                <div>
+                    <button type="button" class="btn btn-warning" id="remove-shift-btn">
+                        <i class="la la-trash"></i> Remove Shift
+                    </button>
+                    <button type="button" class="btn btn-success" id="submit-attendance-btn">
+                        <i class="la la-save"></i> Submit Full Month Attendance
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                {{-- Attendance Mode Information --}}
+                <div id="attendance-info">
+                    {{-- Info message will be populated by JavaScript --}}
+                </div>
+                
+                {{-- Bulk Actions --}}
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="btn-group flex-wrap" role="group">
+                            <button type="button" class="btn btn-outline-primary btn-sm bulk-check" 
+                                    data-action="all-days">All Days</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm bulk-check" 
+                                    data-action="except-sunday">Except Sunday</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm bulk-check" 
+                                    data-action="except-saturday">Except Saturday</button>
+                            <button type="button" class="btn btn-outline-primary btn-sm bulk-check" 
+                                    data-action="except-weekend">Except Saturday & Sunday</button>
+                            <button type="button" class="btn btn-outline-info btn-sm bulk-check" 
+                                    data-action="shift-1">Check All 1st Shift</button>
+                            <button type="button" class="btn btn-outline-info btn-sm bulk-check" 
+                                    data-action="shift-2">Check All 2nd Shift</button>
+                            <button type="button" class="btn btn-outline-info btn-sm bulk-check" 
+                                    data-action="shift-3">Check All 3rd Shift</button>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Scrollable Table Container --}}
+                <div class="table-responsive" style="max-height: 600px; overflow-x: auto;">
+                    <table class="table table-bordered table-hover table-sm" id="attendance-table">
+                        <thead class="table-dark sticky-top" id="table-head">
+                            {{-- Table header will be completely regenerated by JavaScript --}}
+                        </thead>
+                        <tbody id="attendance-tbody">
+                            {{-- Employee rows will be generated dynamically --}}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Success/Error Messages --}}
+<div class="row mt-3">
+    <div class="col-md-12">
+        <div id="message-container"></div>
+    </div>
+</div>
+
+@endsection
+
+@push('after_styles')
+<style>
+    .table-responsive {
+        border: 1px solid #dee2e6;
+    }
+    
+    .sticky-top {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .day-header {
+        writing-mode: vertical-lr;
+        text-orientation: mixed;
+        min-width: 80px;
+        max-width: 80px;
+        text-align: center;
+        font-size: 0.75rem;
+        padding: 8px 4px;
+    }
+    
+    .weekend-header {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .day-cell {
+        min-width: 80px;
+        max-width: 80px;
+        text-align: center;
+        vertical-align: middle;
+        padding: 4px;
+    }
+    
+    .weekend-cell {
+        background-color: #f8f9fa;
+    }
+    
+    .shift-checkbox {
+        margin: 2px 0;
+    }
+    
+    .ot-checkbox {
+        margin: 2px 0;
+    }
+    
+    .employee-row {
+        height: 60px;
+    }
+    
+    .total-cell {
+        background-color: #e9ecef;
+        font-weight: bold;
+    }
+    
+    .btn-group .btn {
+        margin: 2px;
+    }
+
+    #attendance-table th,
+    #attendance-table td {
+        white-space: nowrap;
+    }
+
+    .form-check-input {
+        cursor: pointer;
+    }
+
+    .bulk-check {
+        margin: 2px;
+    }
+</style>
+@endpush
+
+@push('after_scripts')
+<script>
+$(document).ready(function() {
+    console.log('=== DOCUMENT READY ===');
+    console.log('jQuery version:', $.fn.jquery);
+    console.log('=== BULK ATTENDANCE PAGE LOADED ===');
+    console.log('Current URL:', window.location.href);
+    console.log('CSRF token:', $('meta[name="csrf-token"]').attr('content'));
+    
+    console.log('Available clients count:', $('#site_id option').length);
+    console.log('Available user types count:', $('#user_type option').length);
+    console.log('Available shifts count:', $('input[name="shifts[]"]').length);
+    
+    // Log all available options for debugging
+    $('#site_id option').each(function() {
+        console.log('Client option:', $(this).val(), '-', $(this).text());
+    });
+    
+    $('#user_type option').each(function() {
+        console.log('User type option:', $(this).val(), '-', $(this).text());
+    });
+    
+    $('input[name="shifts[]"]').each(function() {
+        console.log('Shift option:', $(this).val(), '-', $(this).next('label').text());
+    });
+    
+    // Test AJAX connectivity
+    console.log('=== TESTING AJAX CONNECTIVITY ===');
+    $.ajax({
+        url: '{{ route("admin.bulk-attendance.search") }}',
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        success: function(response) {
+            console.log('✅ AJAX connectivity test successful');
+        },
+        error: function(xhr, status, error) {
+            console.log('❌ AJAX connectivity test failed:');
+            console.log('Status:', status, 'Error:', error);
+            console.log('Response status:', xhr.status);
+            console.log('Response text:', xhr.responseText);
+        }
+    });
+
+    // Bind form submission handler with more debugging
+    console.log('=== BINDING FORM SUBMISSION HANDLER ===');
+    const $form = $('#attendance-search-form');
+    console.log('Form found:', $form.length > 0);
+    console.log('Form element:', $form[0]);
+    
+    $form.on('submit', function(e) {
+        console.log('=== FORM SUBMISSION EVENT TRIGGERED ===');
+        console.log('Event object:', e);
+        console.log('preventDefault called');
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('Form submission triggered!');
+        
+        // Check if form elements exist
+        console.log('Form elements check:');
+        console.log('Site selector exists:', $('#site_id').length > 0);
+        console.log('User type selector exists:', $('#user_type').length > 0);
+        console.log('Month selector exists:', $('#month_select').length > 0);
+        console.log('Year selector exists:', $('#year_select').length > 0);
+        console.log('Shift checkboxes exist:', $('input[name="shifts[]"]').length);
+    console.log('Bulk Attendance page loaded, jQuery ready');
+    let currentData = {};
+    let calendar = [];
+    
+    // Update hidden month field when month/year selectors change
+    $('#month_select, #year_select').on('change', function() {
+        const selectedMonth = $('#month_select').val();
+        const selectedYear = $('#year_select').val();
+        const monthValue = selectedYear + '-' + selectedMonth;
+        $('#month').val(monthValue);
+        console.log('Month/Year changed to:', monthValue);
+    });
+
+    // Search form submission
+    $('#attendance-search-form').on('submit', function(e) {
+        console.log('=== FORM SUBMISSION STARTED ===');
+        console.log('Form submission triggered!');
+        e.preventDefault();
+        
+        // Check if form elements exist
+        console.log('Form elements check:');
+        console.log('Site selector exists:', $('#site_id').length > 0);
+        console.log('User type selector exists:', $('#user_type').length > 0);
+        console.log('Month selector exists:', $('#month_select').length > 0);
+        console.log('Year selector exists:', $('#year_select').length > 0);
+        console.log('Shift checkboxes exist:', $('input[name="shifts[]"]').length);
+        
+        // Store current form values before search
+        const currentFormValues = {
+            site_id: $('#site_id').val(),
+            user_type: $('#user_type').val(),
+            month_select: $('#month_select').val(),
+            year_select: $('#year_select').val(),
+            shifts: $('input[name="shifts[]"]:checked').map(function() {
+                return this.value;
+            }).get()
+        };
+        
+        console.log('Current form values before search:', currentFormValues);
+        
+        // Combine month and year into proper format
+        const selectedMonth = $('#month_select').val();
+        const selectedYear = $('#year_select').val();
+        const monthValue = selectedYear + '-' + selectedMonth;
+        $('#month').val(monthValue);
+        
+        const formData = {
+            site_id: $('#site_id').val(),
+            user_type: $('#user_type').val(),
+            month: monthValue,
+            shifts: $('input[name="shifts[]"]:checked').map(function() {
+                return this.value;
+            }).get()
+        };
+
+        console.log('Form data being sent:', formData); // Debug log
+        console.log('CSRF token available:', $('meta[name="csrf-token"]').attr('content') !== undefined);
+
+        if (!formData.site_id || !formData.user_type || !formData.month) {
+            console.log('Validation failed: missing required fields');
+            console.log('Site ID:', formData.site_id);
+            console.log('User Type:', formData.user_type);
+            console.log('Month:', formData.month);
+            showMessage('error', 'Please fill all required fields.');
+            return;
+        }
+
+        if (formData.shifts.length === 0) {
+            console.log('Validation failed: no shifts selected');
+            showMessage('error', 'Please select at least one shift.');
+            return;
+        }
+
+        console.log('=== VALIDATION PASSED - CALLING SEARCH ===');
+        // Call search with preserved values
+        console.log('Calling searchEmployees with formData object and currentFormValues');
+        searchEmployees(formData, currentFormValues);
+    });
+
+    // Debug button for testing
+    $('#debug-btn').on('click', function() {
+        console.log('=== DEBUG INFO ===');
+        console.log('Site ID value:', $('#site_id').val());
+        console.log('User Type value:', $('#user_type').val());
+        console.log('Month value:', $('#month').val());
+        console.log('Selected shifts:', $('input[name="shifts[]"]:checked').map(function() {
+            return this.value;
+        }).get());
+        console.log('CSRF token:', $('meta[name="csrf-token"]').attr('content'));
+        
+        // Test if form elements exist
+        console.log('Form exists:', $('#attendance-search-form').length);
+        console.log('Site select options count:', $('#site_id option').length);
+        console.log('User type select options count:', $('#user_type option').length);
+        
+        // Show available options
+        console.log('Available sites:');
+        $('#site_id option').each(function() {
+            if ($(this).val()) {
+                console.log('  -', $(this).val(), ':', $(this).text());
+            }
+        });
+        
+        console.log('Available user types:');
+        $('#user_type option').each(function() {
+            if ($(this).val()) {
+                console.log('  -', $(this).val(), ':', $(this).text());
+            }
+        });
+        
+        // Test actual search with sample data
+        console.log('=== TESTING SEARCH WITH SAMPLE DATA ===');
+        if ($('#site_id option').length > 1 && $('#user_type option').length > 1) {
+            // Get first available site and user type
+            const testSiteId = $('#site_id option:eq(1)').val(); // Skip first "select" option
+            const testUserType = $('#user_type option:eq(1)').val();
+            
+            const testFormData = {
+                site_id: testSiteId,
+                user_type: testUserType,
+                month: '2025-11',
+                shifts: ['1']
+            };
+            
+            console.log('Testing with data:', testFormData);
+            
+            $.ajax({
+                url: '{{ route("admin.bulk-attendance.search") }}',
+                method: 'POST',
+                data: testFormData,
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    console.log('✅ DEBUG TEST SUCCESSFUL:', response);
+                    showMessage('success', `Debug test worked! Found ${response.data.employees.length} employees.`);
+                },
+                error: function(xhr, status, error) {
+                    console.log('❌ DEBUG TEST FAILED:', status, error);
+                    console.log('Response:', xhr.responseText);
+                    showMessage('error', 'Debug test failed: ' + status + ' - Check console for details');
+                }
+            });
+        } else {
+            showMessage('warning', 'No options available for testing. Check if page loaded correctly.');
+        }
+    });
+
+    // Search employees with form preservation
+    function searchEmployeesWithPreservation(formData, originalFormValues) {
+        console.log('searchEmployeesWithPreservation called with:', formData, originalFormValues);
+        $('#loading-spinner').show();
+        $('#attendance-section').hide();
+
+        $.ajax({
+            url: '{{ route("admin.bulk-attendance.search") }}',
+            method: 'POST',
+            data: formData,
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            beforeSend: function() {
+                console.log('AJAX request starting...');
+            },
+            success: function(response) {
+                console.log('AJAX success, response received:', response);
+                $('#loading-spinner').hide();
+                
+                if (response.success) {
+                    currentData = response.data;
+                    calendar = response.data.calendar;
+                    
+                    // FORCE preserve original form field values
+                    console.log('Preserving form values:', originalFormValues);
+                    
+                    $('#site_id').val(originalFormValues.site_id);
+                    $('#user_type').val(originalFormValues.user_type);
+                    $('#month_select').val(originalFormValues.month_select);
+                    $('#year_select').val(originalFormValues.year_select);
+                    
+                    // Restore shift selections
+                    $('input[name="shifts[]"]').prop('checked', false); // Clear all first
+                    originalFormValues.shifts.forEach(function(shiftValue) {
+                        $('input[name="shifts[]"][value="' + shiftValue + '"]').prop('checked', true);
+                    });
+                    
+                    // Update hidden month field
+                    $('#month').val(originalFormValues.year_select + '-' + originalFormValues.month_select);
+                    
+                    console.log('Form values preserved successfully');
+                    
+                    // Show form status indicator
+                    $('#form-status').fadeIn();
+                    setTimeout(function() {
+                        $('#form-status').fadeOut();
+                    }, 4000);
+                    
+                    // Add visual feedback that search was successful
+                    showMessage('success', `Found ${response.data.employees.length} employees for ${response.data.site.name} - ${response.data.user_type}`);
+                    
+                    console.log('Search Results:', {
+                        employees: response.data.employees.length,
+                        calendar_days: response.data.calendar.length,
+                        site: response.data.site.name,
+                        user_type: response.data.user_type,
+                        debug_info: response.data.debug_info
+                    });
+                    
+                    if (response.data.employees.length === 0) {
+                        showMessage('warning', `No employees found for designation "${response.data.user_type}" at site "${response.data.site.name}". Available designations for this site: ${response.data.debug_info.all_designations_for_client.join(', ') || 'None'}`);
+                        $('#attendance-section').hide();
+                        $('#allocate-btn').prop('disabled', true);
+                        return;
+                    }
+                    
+                    buildAttendanceTable(response.data);
+                    $('#attendance-section').show();
+                    $('#allocate-btn').prop('disabled', false);
+                } else {
+                    console.log('Search failed with errors:', response.errors);
+                    showMessage('error', 'Error loading data: ' + JSON.stringify(response.errors));
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX error occurred:');
+                console.error('Status:', status);
+                console.error('Error:', error);
+                console.error('Response:', xhr.responseText);
+                $('#loading-spinner').hide();
+                let errorMsg = 'Error loading data.';
+                if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    errorMsg = Object.values(xhr.responseJSON.errors).flat().join(', ');
+                }
+                showMessage('error', errorMsg);
+            }
+        });
+    }
+
+    // Search employees function
+    function searchEmployees(formData, preservedValues) {
+        console.log('=== SEARCH EMPLOYEES CALLED ===');
+        console.log('searchEmployees called with data:', formData);
+        console.log('Preserved values:', preservedValues);
+        
+        // Use the preserved values passed from the form submission
+        const preservedState = preservedValues || {
+            site_id: formData.site_id,
+            user_type: formData.user_type,
+            month_select: formData.month ? formData.month.split('-')[1] : $('#month_select').val(),
+            year_select: formData.month ? formData.month.split('-')[0] : $('#year_select').val(),
+            shifts: formData.shifts || []
+        };
+        
+        console.log('Form state to preserve:', preservedState);
+        
+        $('#loading-spinner').show();
+        $('#attendance-section').hide();
+
+        $.ajax({
+            url: '{{ route("admin.bulk-attendance.search") }}',
+            method: 'POST',
+            data: formData,
+            dataType: 'json',  // Explicitly expect JSON response
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content'),
+                'Accept': 'application/json'  // Request JSON response
+            },
+            beforeSend: function() {
+                console.log('=== AJAX BEFORE SEND ===');
+                console.log('URL:', '{{ route("admin.bulk-attendance.search") }}');
+                console.log('Method: POST');
+                console.log('Data being sent:', formData);
+                console.log('CSRF Token:', $('meta[name="csrf-token"]').attr('content'));
+                console.log('Preserved state for restoration:', preservedState);
+            },
+            success: function(response) {
+                console.log('=== AJAX SUCCESS ===');
+                console.log('Raw response received:', response);
+                console.log('Response type:', typeof response);
+                
+                // Check if response is actually HTML (error page) instead of JSON
+                if (typeof response === 'string' && response.includes('<!DOCTYPE html>')) {
+                    console.error('❌ Received HTML instead of JSON - likely an error page');
+                    console.error('HTML content:', response.substring(0, 500) + '...');
+                    $('#loading-spinner').hide();
+                    showMessage('error', 'Server returned an error page instead of data. You may need to login again.');
+                    return;
+                }
+                
+                // Check if response has expected structure
+                if (!response || typeof response !== 'object') {
+                    console.error('❌ Invalid response format:', response);
+                    $('#loading-spinner').hide();
+                    showMessage('error', 'Invalid response format received from server.');
+                    return;
+                }
+                
+                $('#loading-spinner').hide();
+                
+                if (response.success) {
+                    console.log('✅ Response indicates success');
+                    currentData = response.data;
+                    calendar = response.data.calendar;
+                    
+                    // IMMEDIATELY restore form values AFTER successful response
+                    console.log('*** RESTORING FORM VALUES ***');
+                    console.log('Restoring to:', preservedState);
+                    
+                    $('#site_id').val(preservedState.site_id);
+                    $('#user_type').val(preservedState.user_type);
+                    $('#month_select').val(preservedState.month_select);
+                    $('#year_select').val(preservedState.year_select);
+                    
+                    // Restore shifts
+                    $('input[name="shifts[]"]').prop('checked', false);
+                    preservedState.shifts.forEach(function(shiftValue) {
+                        console.log('Checking shift:', shiftValue);
+                        $('input[name="shifts[]"][value="' + shiftValue + '"]').prop('checked', true);
+                    });
+                    
+                    // Update the hidden month field
+                    $('#month').val(preservedState.year_select + '-' + preservedState.month_select);
+                    
+                    console.log('*** FORM VALUES RESTORED ***');
+                    
+                    // Show a visual indicator that values were preserved
+                    $('#form-status').text('Form values preserved after search').show();
+                    setTimeout(function() {
+                        $('#form-status').fadeOut();
+                    }, 3000);
+                    
+                    // Show success message
+                    showMessage('success', `Found ${response.data.employees.length} employees for ${response.data.site.name} - ${response.data.user_type}`);
+                    
+                    console.log('Search Results:', {
+                        employees: response.data.employees.length,
+                        calendar_days: response.data.calendar.length,
+                        site: response.data.site.name,
+                        user_type: response.data.user_type,
+                        debug_info: response.data.debug_info
+                    });
+                    
+                    if (response.data.employees.length === 0) {
+                        showMessage('warning', `No employees found for designation "${response.data.user_type}" at site "${response.data.site.name}". Available designations for this site: ${response.data.debug_info.all_designations_for_client.join(', ') || 'None'}`);
+                        $('#attendance-section').hide();
+                        $('#allocate-btn').prop('disabled', true);
+                        return;
+                    }
+                    
+                    buildAttendanceTable(response.data);
+                    $('#attendance-section').show();
+                    $('#allocate-btn').prop('disabled', false);
+                } else {
+                    console.log('Search failed with errors:', response.errors);
+                    showMessage('error', 'Error loading data: ' + JSON.stringify(response.errors));
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('=== AJAX ERROR OCCURRED ===');
+                console.error('Status:', status);
+                console.error('Error:', error);
+                console.error('XHR Status Code:', xhr.status);
+                console.error('XHR Status Text:', xhr.statusText);
+                console.error('Response Text (first 500 chars):', xhr.responseText ? xhr.responseText.substring(0, 500) : 'No response text');
+                console.error('Response Headers:', xhr.getAllResponseHeaders());
+                
+                $('#loading-spinner').hide();
+                
+                // Check for common error scenarios
+                let errorMsg = 'Error loading data.';
+                
+                if (xhr.status === 0) {
+                    errorMsg = 'Network error - cannot reach server. Check if you are still logged in.';
+                } else if (xhr.status === 419) {
+                    errorMsg = 'CSRF token expired. Please refresh the page and try again.';
+                } else if (xhr.status === 422) {
+                    errorMsg = 'Validation failed. Please check your input.';
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+                        errorMsg += ' Errors: ' + Object.values(xhr.responseJSON.errors).flat().join(', ');
+                    }
+                } else if (xhr.status === 302 || (xhr.responseText && xhr.responseText.includes('Redirecting to'))) {
+                    errorMsg = 'Authentication required. Please login again and try.';
+                } else if (xhr.status === 500) {
+                    errorMsg = 'Server error. Please check the console and Laravel logs for details.';
+                } else if (xhr.responseText && xhr.responseText.includes('<!DOCTYPE html>')) {
+                    errorMsg = 'Server returned an error page. You may need to refresh and login again.';
+                } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    errorMsg = Object.values(xhr.responseJSON.errors).flat().join(', ');
+                }
+                
+                showMessage('error', errorMsg);
+                
+                // Try to preserve form state even on error
+                console.log('Preserving form state despite error...');
+                if (typeof preservedState !== 'undefined') {
+                    $('#site_id').val(preservedState.site_id);
+                    $('#user_type').val(preservedState.user_type);
+                    $('#month_select').val(preservedState.month_select);
+                    $('#year_select').val(preservedState.year_select);
+                }
+            }
+        });
+    }
+
+    // Build attendance table
+    function buildAttendanceTable(data) {
+        const { employees, calendar, site, existing_attendance } = data;
+        
+        console.log('=== BUILD TABLE DEBUG ===');
+        console.log('Employees received:', employees);
+        console.log('Calendar received:', calendar);
+        console.log('Site received:', site);
+        console.log('Existing attendance:', existing_attendance);
+        
+        // Check if there's existing attendance data
+        const hasExistingData = Object.keys(existing_attendance).length > 0;
+        
+        // Store mode for later use
+        window.attendanceMode = hasExistingData ? 'edit' : 'create';
+        
+        console.log('Building table with:', {
+            employees: employees.length,
+            calendar: calendar.length,
+            site: site.name,
+            hasExistingData: hasExistingData
+        });
+        
+        // Show edit mode message if there's existing data
+        if (hasExistingData) {
+            $('#attendance-info').html(`
+                <div class="alert alert-info mb-3">
+                    <i class="la la-edit"></i> <strong>Edit Mode:</strong> 
+                    Attendance data already exists for <strong>${site.name}</strong> in the selected month. 
+                    You are now editing existing records. Changes will overwrite the current data.
+                </div>
+            `);
+            $('#submit-attendance-btn').html('<i class="la la-save"></i> Update Attendance');
+        } else {
+            $('#attendance-info').html(`
+                <div class="alert alert-success mb-3">
+                    <i class="la la-plus-circle"></i> <strong>Create Mode:</strong> 
+                    Creating new attendance records for <strong>${site.name}</strong> in the selected month.
+                </div>
+            `);
+            $('#submit-attendance-btn').html('<i class="la la-save"></i> Submit Full Month Attendance');
+        }
+        
+        if (employees.length === 0) {
+            console.log('No employees, showing empty message');
+            $('#attendance-tbody').html(`
+                <tr>
+                    <td colspan="6" class="text-center py-4">
+                        <i class="la la-exclamation-triangle" style="font-size: 2rem; color: #ffc107;"></i>
+                        <h4>No employees found</h4>
+                        <p>No employees found for the selected designation. Try a different user type.</p>
+                    </td>
+                </tr>
+            `);
+            $('#table-head').html(`
+                <tr>
+                    <th>Sr. No</th>
+                    <th>Site Name</th>
+                    <th>Employee</th>
+                    <th>User Type</th>
+                    <th>Days</th>
+                    <th>Total</th>
+                </tr>
+            `);
+            return;
+        }
+        
+        // Build complete header row
+        let headerHtml = `
+            <tr>
+                <th>Sr. No</th>
+                <th>Site Name</th>
+                <th>Employee</th>
+                <th>User Type</th>
+        `;
+        
+        calendar.forEach(day => {
+            const isWeekend = day.is_weekend;
+            const weekendClass = isWeekend ? 'weekend-header' : '';
+            headerHtml += `
+                <th class="day-header ${weekendClass}">
+                    <div>Day ${day.day}</div>
+                    <div class="small">${day.day_name}</div>
+                    <div class="small">Total: <span id="day-total-${day.day}">0</span></div>
+                </th>
+            `;
+        });
+        
+        headerHtml += `
+                <th>Total</th>
+            </tr>
+        `;
+        
+        $('#table-head').html(headerHtml);
+
+        // Build body
+        let bodyHtml = '';
+        employees.forEach((employee, index) => {
+            bodyHtml += `
+                <tr class="employee-row" data-employee-id="${employee.id}">
+                    <td>${index + 1}</td>
+                    <td>${site.name}</td>
+                    <td>
+                        <strong>${employee.first_name} ${employee.last_name}</strong>
+                        ${employee.job_role ? `<br><small class="text-muted">${employee.job_role}</small>` : ''}
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary">${employee.designation}</span>
+                    </td>
+            `;
+
+            calendar.forEach(day => {
+                const isWeekend = day.is_weekend;
+                const weekendClass = isWeekend ? 'weekend-cell' : '';
+                
+                // Check for existing attendance
+                const existingDay = existing_attendance[employee.id] && existing_attendance[employee.id][day.date];
+                const checkedShift = existingDay ? String(existingDay.shift) : '';
+                const checkedOT = existingDay ? Boolean(existingDay.is_ot) : false;
+                const existingClass = existingDay ? 'existing-data' : '';
+
+                bodyHtml += `
+                    <td class="day-cell ${weekendClass} ${existingClass}" data-date="${day.date}" data-day="${day.day}">`;
+                        <div>
+                            <select name="attendance[${employee.id}][${day.date}][shift]" 
+                                    class="form-select form-select-sm shift-checkbox" 
+                                    data-employee-id="${employee.id}" 
+                                    data-date="${day.date}">
+                                <option value="">-</option>
+                                <option value="1" ${checkedShift === '1' ? 'selected' : ''}>S1</option>
+                                <option value="2" ${checkedShift === '2' ? 'selected' : ''}>S2</option>
+                                <option value="3" ${checkedShift === '3' ? 'selected' : ''}>S3</option>
+                            </select>
+                        </div>
+                        <div class="form-check">
+                            <input type="checkbox" 
+                                   name="attendance[${employee.id}][${day.date}][is_ot]" 
+                                   value="1" 
+                                   class="form-check-input ot-checkbox" 
+                                   data-employee-id="${employee.id}" 
+                                   data-date="${day.date}"
+                                   ${checkedOT ? 'checked' : ''}>
+                            <label class="form-check-label small">OT</label>
+                        </div>
+                    </td>
+                `;
+            });
+
+            bodyHtml += `
+                    <td class="total-cell">
+                        <span class="employee-total" data-employee-id="${employee.id}">0</span>
+                    </td>
+                </tr>
+            `;
+        });
+        $('#attendance-tbody').html(bodyHtml);
+
+        // Update totals
+        updateAllTotals();
+
+        // Bind events
+        bindAttendanceEvents();
+    }
+
+    // Bind attendance events
+    function bindAttendanceEvents() {
+        // Shift change event
+        $('.shift-checkbox').on('change', function() {
+            updateTotals();
+        });
+
+        // Bulk check events
+        $('.bulk-check').on('click', function() {
+            const action = $(this).data('action');
+            applyBulkAction(action);
+        });
+
+        // Remove shift button
+        $('#remove-shift-btn').on('click', function() {
+            if (confirm('Are you sure you want to remove all attendance data?')) {
+                $('.shift-checkbox').val('');
+                $('.ot-checkbox').prop('checked', false);
+                updateTotals();
+            }
+        });
+
+        // Submit attendance
+        $('#submit-attendance-btn').on('click', function() {
+            submitAttendance();
+        });
+    }
+
+    // Apply bulk actions
+    function applyBulkAction(action) {
+        $('.shift-checkbox').each(function() {
+            const $this = $(this);
+            const date = $this.data('date');
+            const dayElement = $this.closest('td');
+            const isWeekend = dayElement.hasClass('weekend-cell');
+            
+            let shouldCheck = false;
+            let shiftValue = '1'; // Default shift
+
+            switch(action) {
+                case 'all-days':
+                    shouldCheck = true;
+                    break;
+                case 'except-sunday':
+                    shouldCheck = !calendar.find(d => d.date === date)?.is_sunday;
+                    break;
+                case 'except-saturday':
+                    shouldCheck = !calendar.find(d => d.date === date)?.is_saturday;
+                    break;
+                case 'except-weekend':
+                    shouldCheck = !isWeekend;
+                    break;
+                case 'shift-1':
+                    shouldCheck = true;
+                    shiftValue = '1';
+                    break;
+                case 'shift-2':
+                    shouldCheck = true;
+                    shiftValue = '2';
+                    break;
+                case 'shift-3':
+                    shouldCheck = true;
+                    shiftValue = '3';
+                    break;
+            }
+
+            if (shouldCheck) {
+                $this.val(shiftValue);
+            }
+        });
+
+        updateTotals();
+    }
+
+    // Update totals
+    function updateTotals() {
+        updateAllTotals();
+    }
+
+    function updateAllTotals() {
+        // Update employee totals
+        $('[data-employee-id]').each(function() {
+            const employeeId = $(this).data('employee-id');
+            if ($(this).hasClass('employee-total')) {
+                const total = $(`.shift-checkbox[data-employee-id="${employeeId}"]`).filter(function() {
+                    return $(this).val() !== '';
+                }).length;
+                $(this).text(total);
+            }
+        });
+
+        // Update day totals
+        calendar.forEach(day => {
+            const total = $(`.shift-checkbox[data-date="${day.date}"]`).filter(function() {
+                return $(this).val() !== '';
+            }).length;
+            $(`#day-total-${day.day}`).text(total);
+        });
+    }
+
+    // Submit attendance
+    function submitAttendance() {
+        const attendanceData = {};
+        
+        // Validate required fields first
+        const siteId = $('#site_id').val();
+        const userType = $('#user_type').val();
+        const month = $('#month').val();
+        
+        if (!siteId || !userType || !month) {
+            showMessage('error', 'Please select Site, User Type, and Month before submitting attendance.');
+            return;
+        }
+        
+        $('.shift-checkbox').each(function() {
+            const employeeId = $(this).data('employee-id');
+            const date = $(this).data('date');
+            const shift = $(this).val();
+            
+            if (shift) {
+                if (!attendanceData[employeeId]) {
+                    attendanceData[employeeId] = {};
+                }
+                
+                const isOT = $(`.ot-checkbox[data-employee-id="${employeeId}"][data-date="${date}"]`).is(':checked');
+                
+                attendanceData[employeeId][date] = {
+                    shift: shift,
+                    is_ot: isOT ? 1 : 0  // Send as 1/0 instead of boolean
+                };
+            }
+        });
+
+        console.log('Attendance Data:', attendanceData); // Debug log
+
+        if (Object.keys(attendanceData).length === 0) {
+            showMessage('warning', 'No attendance data to submit. Please mark attendance for at least one employee.');
+            return;
+        }
+
+        if (!confirm('Are you sure you want to submit the attendance data?')) {
+            return;
+        }
+
+        const submitData = {
+            site_id: siteId,
+            user_type: userType,
+            month: month,
+            attendance: attendanceData,
+            _token: $('meta[name="csrf-token"]').attr('content')
+        };
+
+        console.log('Submit Data:', submitData); // Debug log
+
+        $('#submit-attendance-btn').prop('disabled', true).html('<i class="la la-spinner la-spin"></i> Submitting...');
+
+        $.ajax({
+            url: '{{ route("admin.bulk-attendance.store") }}',
+            method: 'POST',
+            data: submitData,
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            success: function(response) {
+                const buttonText = window.attendanceMode === 'edit' ? '<i class="la la-save"></i> Update Attendance' : '<i class="la la-save"></i> Submit Full Month Attendance';
+                $('#submit-attendance-btn').prop('disabled', false).html(buttonText);
+                
+                console.log('Success Response:', response); // Debug log
+                
+                if (response.success) {
+                    showMessage('success', response.message);
+                } else {
+                    showMessage('error', response.message || 'Error submitting attendance.');
+                }
+            },
+            error: function(xhr) {
+                const buttonText = window.attendanceMode === 'edit' ? '<i class="la la-save"></i> Update Attendance' : '<i class="la la-save"></i> Submit Full Month Attendance';
+                $('#submit-attendance-btn').prop('disabled', false).html(buttonText);
+                
+                console.log('Error Response:', xhr); // Debug log
+                
+                let errorMsg = 'Error submitting attendance.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    errorMsg = Object.values(xhr.responseJSON.errors).flat().join(', ');
+                } else if (xhr.responseText) {
+                    errorMsg += ' Details: ' + xhr.responseText.substring(0, 200);
+                }
+                showMessage('error', errorMsg);
+            }
+        });
+    }
+
+    // Show message function
+    function showMessage(type, message) {
+        const alertClass = type === 'error' ? 'alert-danger' : 
+                          type === 'warning' ? 'alert-warning' : 
+                          type === 'success' ? 'alert-success' : 'alert-info';
+        
+        const html = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        
+        $('#message-container').html(html);
+        
+        // Auto hide after 5 seconds
+        setTimeout(function() {
+            $('.alert').fadeOut();
+        }, 5000);
+    }
+    
+    // Clear form button functionality
+    $('#clear-form-btn').on('click', function() {
+        // Reset all form fields to default values
+        $('#site_id').val('');
+        $('#user_type').val('');
+        $('#month_select').val('{{ date('m') }}');
+        $('#year_select').val('{{ date('Y') }}');
+        $('#month').val('{{ date('Y-m') }}');
+        
+        // Uncheck all shift checkboxes
+        $('input[name="shifts[]"]').prop('checked', false);
+        
+        // Hide attendance section
+        $('#attendance-section').hide();
+        $('#allocate-btn').prop('disabled', true);
+        
+        // Hide form status
+        $('#form-status').hide();
+        
+        // Clear any messages
+        $('#message-container').empty();
+        
+        // Show confirmation
+        showMessage('info', 'Form cleared successfully. Please fill in the search criteria again.');
+        
+        console.log('Form cleared to default values');
+    });
+});
+</script>
+@endpush
