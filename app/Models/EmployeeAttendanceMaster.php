@@ -18,13 +18,23 @@ class EmployeeAttendanceMaster extends Model
         'site_id',
         'month',
         'user_type',
-        'created_by'
+        'created_by',
+        'status',
+        'approved_by',
+        'approved_at'
     ];
 
     protected $casts = [
         'site_id' => 'integer',
         'created_by' => 'integer',
+        'approved_by' => 'integer',
+        'approved_at' => 'datetime',
     ];
+
+    public const STATUS_DRAFT = 'draft';
+    public const STATUS_SUBMITTED = 'submitted';
+    public const STATUS_APPROVED = 'approved';
+    public const STATUS_LOCKED = 'locked';
 
     /**
      * Get the client (site) that owns this attendance record

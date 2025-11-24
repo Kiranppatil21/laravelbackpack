@@ -11,21 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('employee_uniform_allocations', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('employee_id');
-            $table->unsignedBigInteger('client_id');
-            $table->string('item_name');
-            $table->integer('quantity');
-            $table->decimal('rate', 10, 2);
-            $table->decimal('sub_total', 10, 2);
-            $table->string('tenant_uuid');
-            $table->timestamps();
+        if (! Schema::hasTable('employee_uniform_allocations')) {
+            Schema::create('employee_uniform_allocations', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('employee_id');
+                $table->unsignedBigInteger('client_id');
+                $table->string('item_name');
+                $table->integer('quantity');
+                $table->decimal('rate', 10, 2);
+                $table->decimal('sub_total', 10, 2);
+                $table->string('tenant_uuid');
+                $table->timestamps();
 
-            $table->foreign('employee_id')->references('id')->on('employees')->onDelete('cascade');
-            $table->foreign('client_id')->references('id')->on('clients')->onDelete('cascade');
-            $table->index(['employee_id', 'tenant_uuid']);
-        });
+                $table->foreign('employee_id')->references('id')->on('employees')->onDelete('cascade');
+                $table->foreign('client_id')->references('id')->on('clients')->onDelete('cascade');
+                $table->index(['employee_id', 'tenant_uuid']);
+            });
+        }
     }
 
     /**

@@ -482,6 +482,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span>Bulk Attendance</span>
             </a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ backpack_url('bulk-attendance/view') }}">
+                <i class="nav-icon la la-table"></i>
+                <span>All Bulk Records</span>
+            </a>
+        </li>
     </ul>
 </li>
 
@@ -562,6 +568,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span>Bulk Attendance</span>
             </a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ backpack_url('bulk-attendance/view') }}">
+                <i class="nav-icon la la-table"></i>
+                <span>All Bulk Records</span>
+            </a>
+        </li>
     </ul>
 </li>
 
@@ -628,6 +640,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 <span>Bulk Attendance</span>
             </a>
         </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ backpack_url('bulk-attendance/view') }}">
+                <i class="nav-icon la la-table"></i>
+                <span>All Bulk Records</span>
+            </a>
+        </li>
     </ul>
 </li>
 
@@ -671,6 +689,12 @@ document.addEventListener('DOMContentLoaded', function() {
             <a class="nav-link" href="{{ backpack_url('bulk-attendance') }}">
                 <i class="nav-icon la la-calendar"></i>
                 <span>View Bulk Attendance</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ backpack_url('bulk-attendance/view') }}">
+                <i class="nav-icon la la-table"></i>
+                <span>All Bulk Records</span>
             </a>
         </li>
     </ul>

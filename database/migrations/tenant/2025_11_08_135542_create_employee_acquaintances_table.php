@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('employee_acquaintances', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('employee_id');
-            $table->text('details'); // Name, Contact, Address combined
-            $table->string('tenant_uuid');
-            $table->timestamps();
+        if (! Schema::hasTable('employee_acquaintances')) {
+            Schema::create('employee_acquaintances', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('employee_id');
+                $table->text('details');
+                $table->string('tenant_uuid');
+                $table->timestamps();
 
-            $table->foreign('employee_id')->references('id')->on('employees')->onDelete('cascade');
-            $table->index(['employee_id', 'tenant_uuid']);
-        });
+                $table->foreign('employee_id')->references('id')->on('employees')->onDelete('cascade');
+                $table->index(['employee_id', 'tenant_uuid']);
+            });
+        }
     }
 
     /**

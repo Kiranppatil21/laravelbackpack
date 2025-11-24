@@ -9,6 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         // Visitor pre-approvals and invitations
+        if (! Schema::hasTable('visitor_invitations')) {
         Schema::create('visitor_invitations', function (Blueprint $table) {
             $table->id();
             $table->string('invitation_code')->unique();
@@ -37,8 +38,10 @@ return new class extends Migration
             $table->index(['status', 'valid_from', 'valid_until']);
             $table->index(['host_id', 'valid_from']);
         });
+        }
 
         // Visitor watchlist and security alerts
+        if (! Schema::hasTable('visitor_watchlist')) {
         Schema::create('visitor_watchlist', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('visitor_id')->nullable();
@@ -62,8 +65,10 @@ return new class extends Migration
             $table->index(['is_active', 'expires_at']);
             $table->index(['visitor_id', 'is_active']);
         });
+        }
 
         // Security alerts and incidents
+        if (! Schema::hasTable('security_alerts')) {
         Schema::create('security_alerts', function (Blueprint $table) {
             $table->id();
             $table->enum('type', ['watchlist_entry', 'overstay', 'unauthorized_area', 'tailgating', 'lost_badge', 'emergency', 'other'])->default('other');
@@ -89,8 +94,10 @@ return new class extends Migration
             $table->index(['type', 'severity', 'status']);
             $table->index(['occurred_at', 'status']);
         });
+        }
 
         // Device registry for IoT integration
+        if (! Schema::hasTable('visitor_devices')) {
         Schema::create('visitor_devices', function (Blueprint $table) {
             $table->id();
             $table->string('device_id')->unique();
@@ -112,8 +119,10 @@ return new class extends Migration
             $table->index(['device_type', 'status']);
             $table->index(['location', 'status']);
         });
+        }
 
         // Visitor feedback and ratings
+        if (! Schema::hasTable('visitor_feedback')) {
         Schema::create('visitor_feedback', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('visitor_id');
@@ -134,6 +143,7 @@ return new class extends Migration
             $table->index(['feedback_type', 'rating']);
             $table->index(['visitor_id', 'created_at']);
         });
+        }
     }
 
     public function down(): void

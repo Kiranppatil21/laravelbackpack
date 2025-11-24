@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\Employee;
 use App\Models\EmployeeAttendanceMaster;
 use App\Models\EmployeeAttendanceDetail;
+use App\Models\EmployeeAttendanceAudit;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -155,6 +156,13 @@ class BulkAttendanceController extends Controller
         // Get existing attendance data if any
         $existingAttendance = $this->getExistingAttendance($siteId, $month, $userType);
 
+        // Master record (for status/approval state)
+        $masterMeta = EmployeeAttendanceMaster::where([
+            'site_id' => $siteId,
+            'month' => $month,
+            'user_type' => $userType,
+        ])->first(['id','status','approved_by','approved_at']);
+
         // Get site name
         $site = Client::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)->find($siteId);
 
@@ -181,6 +189,7 @@ class BulkAttendanceController extends Controller
                 'user_type' => $userType,
                 'shifts' => $selectedShifts,
                 'existing_attendance' => $existingAttendance,
+                'master' => $masterMeta,
                 'debug_info' => $debugInfo
             ],
             'debug' => [
@@ -224,6 +233,20 @@ class BulkAttendanceController extends Controller
             $month = $request->month;
             $attendanceData = $request->attendance;
 
+            // Prevent editing locked records
+            $existingMaster = EmployeeAttendanceMaster::where([
+                'site_id' => $siteId,
+                'month' => $month,
+                'user_type' => $userType
+            ])->first();
+
+            if ($existingMaster && ($existingMaster->status === EmployeeAttendanceMaster::STATUS_LOCKED)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Attendance is locked and cannot be edited.'
+                ], 403);
+            }
+
             // Create or update attendance master record
             $master = EmployeeAttendanceMaster::updateOrCreate([
                 'site_id' => $siteId,
@@ -231,7 +254,9 @@ class BulkAttendanceController extends Controller
                 'user_type' => $userType
             ], [
                 'created_by' => Auth::id(),
-                'tenant_id' => tenant('id') ?? 1 // Fallback to 1 if tenant context is not available
+                'tenant_id' => tenant('id') ?? 1, // Fallback to 1 if tenant context is not available
+                // Reset to draft on modification unless already submitted/approved/locked
+                'status' => $existingMaster && $existingMaster->status ? $existingMaster->status : EmployeeAttendanceMaster::STATUS_DRAFT,
             ]);
 
             // Clear existing attendance details for this master record
@@ -273,6 +298,14 @@ class BulkAttendanceController extends Controller
                 }
             }
 
+            // Audit log
+            $this->logAudit($master->id, $existingMaster ? 'update' : 'create', null, [
+                'total_records' => $totalRecords,
+                'site_id' => $siteId,
+                'month' => $month,
+                'user_type' => $userType,
+            ], null, $request);
+
             DB::commit();
 
             return response()->json([
@@ -288,6 +321,87 @@ class BulkAttendanceController extends Controller
                 'success' => false,
                 'message' => 'Error saving attendance: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Submit attendance for approval (draft -> submitted)
+     */
+    public function submit($id, Request $request)
+    {
+        $master = EmployeeAttendanceMaster::findOrFail($id);
+        if ($master->status !== EmployeeAttendanceMaster::STATUS_DRAFT) {
+            return response()->json(['success' => false, 'message' => 'Only draft records can be submitted.'], 422);
+        }
+        $before = $master->only(['status']);
+        $master->status = EmployeeAttendanceMaster::STATUS_SUBMITTED;
+        $master->save();
+        $this->logAudit($master->id, 'submit', $before, $master->only(['status']), null, $request);
+        return response()->json(['success' => true, 'message' => 'Submitted for approval.', 'status' => $master->status]);
+    }
+
+    /**
+     * Approve attendance (submitted -> approved)
+     */
+    public function approve($id, Request $request)
+    {
+        $user = Auth::user();
+        if (!$user || ! $user->hasAnyRole(['Super Admin','Agency Owner','HR'])) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        }
+
+        $master = EmployeeAttendanceMaster::findOrFail($id);
+        if ($master->status !== EmployeeAttendanceMaster::STATUS_SUBMITTED) {
+            return response()->json(['success' => false, 'message' => 'Only submitted records can be approved.'], 422);
+        }
+        $before = $master->only(['status','approved_by','approved_at']);
+        $master->status = EmployeeAttendanceMaster::STATUS_APPROVED;
+        $master->approved_by = $user->id;
+        $master->approved_at = now();
+        $master->save();
+        $this->logAudit($master->id, 'approve', $before, $master->only(['status','approved_by','approved_at']), null, $request);
+        return response()->json(['success' => true, 'message' => 'Attendance approved.', 'status' => $master->status]);
+    }
+
+    /**
+     * Lock attendance (approved -> locked)
+     */
+    public function lock($id, Request $request)
+    {
+        $user = Auth::user();
+        if (!$user || ! $user->hasAnyRole(['Super Admin','Agency Owner','HR'])) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        }
+        $master = EmployeeAttendanceMaster::findOrFail($id);
+        if ($master->status !== EmployeeAttendanceMaster::STATUS_APPROVED) {
+            return response()->json(['success' => false, 'message' => 'Only approved records can be locked.'], 422);
+        }
+        $before = $master->only(['status']);
+        $master->status = EmployeeAttendanceMaster::STATUS_LOCKED;
+        $master->save();
+        $this->logAudit($master->id, 'lock', $before, $master->only(['status']), null, $request);
+        return response()->json(['success' => true, 'message' => 'Attendance locked.', 'status' => $master->status]);
+    }
+
+    /**
+     * Write an audit record
+     */
+    private function logAudit(int $masterId, string $action, $before = null, $after = null, $detailId = null, ?Request $request = null): void
+    {
+        try {
+            EmployeeAttendanceAudit::create([
+                'attendance_master_id' => $masterId,
+                'attendance_detail_id' => $detailId,
+                'site_id' => null,
+                'changed_by' => Auth::id(),
+                'action' => $action,
+                'before' => $before,
+                'after' => $after,
+                'ip' => $request ? $request->ip() : request()->ip(),
+                'user_agent' => $request ? $request->header('User-Agent') : request()->header('User-Agent'),
+            ]);
+        } catch (\Throwable $e) {
+            \Log::warning('Failed to write attendance audit: '.$e->getMessage());
         }
     }
 
@@ -334,7 +448,11 @@ class BulkAttendanceController extends Controller
             ->get()
             ->groupBy('employee_id')
             ->map(function ($items) {
-                return $items->keyBy('date')->map(function ($item) {
+                return $items->keyBy(function($item){
+                    return $item->date instanceof \Carbon\Carbon
+                        ? $item->date->format('Y-m-d')
+                        : (is_string($item->date) ? substr($item->date, 0, 10) : $item->date);
+                })->map(function ($item) {
                     return [
                         'shift' => $item->shift,
                         'is_ot' => $item->is_ot
@@ -390,7 +508,11 @@ class BulkAttendanceController extends Controller
             ->map(function ($details) {
                 return [
                     'employee' => $details->first()->employee,
-                    'days' => $details->keyBy('date')->map(function ($detail) {
+                    'days' => $details->keyBy(function($detail){
+                        return $detail->date instanceof \Carbon\Carbon
+                            ? $detail->date->format('Y-m-d')
+                            : (is_string($detail->date) ? substr($detail->date, 0, 10) : $detail->date);
+                    })->map(function ($detail) {
                         return [
                             'shift' => $detail->shift,
                             'is_ot' => $detail->is_ot
@@ -403,23 +525,178 @@ class BulkAttendanceController extends Controller
     }
 
     /**
+     * Return latest audit trail entries for a master record (JSON for AJAX)
+     */
+    public function audits($id)
+    {
+        $master = EmployeeAttendanceMaster::findOrFail($id);
+        $auditsRaw = EmployeeAttendanceAudit::where('attendance_master_id', $master->id)
+            ->orderByDesc('id')
+            ->take(50)
+            ->get(['id','action','changed_by','created_at']);
+        // Map user names
+        $userIds = $auditsRaw->pluck('changed_by')->filter()->unique();
+        $users = \App\Models\User::whereIn('id', $userIds)->get(['id','name']);
+        $nameMap = $users->pluck('name','id');
+        $audits = $auditsRaw->map(function($a) use ($nameMap){
+            return [
+                'id' => $a->id,
+                'action' => $a->action,
+                'changed_by' => $a->changed_by,
+                'changed_by_name' => $a->changed_by ? ($nameMap[$a->changed_by] ?? 'User #'.$a->changed_by) : null,
+                'created_at' => $a->created_at->format('Y-m-d H:i:s')
+            ];
+        });
+        return response()->json([
+            'success' => true,
+            'master_id' => $master->id,
+            'audits' => $audits,
+            'count' => $audits->count()
+        ]);
+    }
+
+    /**
+     * Presence summary matrix (employees x days with presence metadata)
+     */
+    public function summary($id)
+    {
+        $master = EmployeeAttendanceMaster::with('details')->findOrFail($id);
+        $calendar = $this->generateCalendar($master->month);
+        $calendarDates = collect($calendar)->pluck('date');
+
+        // Group details by employee & date (keyed by Y-m-d)
+        $details = $master->details()->get()->groupBy('employee_id')->map(function($items){
+            return $items->keyBy(function($item){
+                return $item->date instanceof \Carbon\Carbon
+                    ? $item->date->format('Y-m-d')
+                    : (is_string($item->date) ? substr($item->date, 0, 10) : $item->date);
+            });
+        });
+        // Fetch all employees for this site & designation (user_type) so that absent employees are included
+        $employees = Employee::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
+            ->where('client_id', $master->site_id)
+            ->where('designation', $master->user_type)
+            ->get(['id','first_name','last_name','position']);
+
+        $matrix = [];
+        foreach ($employees as $emp) {
+            $row = [
+                'employee_id' => $emp->id,
+                'name' => trim($emp->first_name.' '.$emp->last_name),
+                'position' => $emp->position,
+                'days' => []
+            ];
+            foreach ($calendar as $day) {
+                $employeeDetails = $details->get($emp->id);
+                $att = $employeeDetails ? $employeeDetails->get($day['date']) : null;
+                $row['days'][] = [
+                    'date' => $day['date'],
+                    'day' => $day['day'],
+                    'weekday' => $day['day_name'],
+                    'is_weekend' => $day['is_weekend'],
+                    'present' => (bool)$att,
+                    'shift' => $att ? $att->shift : null,
+                    'is_ot' => $att ? (bool)$att->is_ot : false,
+                ];
+            }
+            $matrix[] = $row;
+        }
+
+        return response()->json([
+            'success' => true,
+            'master_id' => $master->id,
+            'month' => $master->month,
+            'user_type' => $master->user_type,
+            'site_id' => $master->site_id,
+            'matrix' => $matrix,
+            'total_employees' => count($matrix),
+            'days_in_month' => count($calendar)
+        ]);
+    }
+
+    /**
+     * Export presence/absence CSV for a master record
+     */
+    public function exportCsv($id)
+    {
+        $master = EmployeeAttendanceMaster::with(['details','site'])->findOrFail($id);
+        $calendar = $this->generateCalendar($master->month);
+        $details = $master->details()->get()->groupBy('employee_id')->map(function($items){
+            return $items->keyBy(function($item){
+                return $item->date instanceof \Carbon\Carbon
+                    ? $item->date->format('Y-m-d')
+                    : (is_string($item->date) ? substr($item->date, 0, 10) : $item->date);
+            });
+        });
+        // Include all employees for the site + designation (even if no attendance details yet)
+        $employees = Employee::withoutGlobalScope(\App\Models\Scopes\TenantScope::class)
+            ->where('client_id', $master->site_id)
+            ->where('designation', $master->user_type)
+            ->get(['id','first_name','last_name','position']);
+
+        $fileName = 'attendance_presence_'.$master->id.'.csv';
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="'.$fileName.'"'
+        ];
+
+        $filter = request()->query('filter'); // null|present|absent
+
+        $callback = function() use ($employees, $details, $calendar, $master, $filter) {
+            $out = fopen('php://output', 'w');
+            // Header row
+            fputcsv($out, ['attendance_ref','site_name','month','user_type','employee_id','employee_name','position','date','day','weekday','is_weekend','present','shift','is_ot']);
+            foreach ($employees as $emp) {
+                foreach ($calendar as $day) {
+                    $employeeDetails = $details->get($emp->id);
+                    $att = $employeeDetails ? $employeeDetails->get($day['date']) : null;
+                    $present = $att ? 1 : 0;
+                    if ($filter === 'present' && !$present) { continue; }
+                    if ($filter === 'absent' && $present) { continue; }
+                    fputcsv($out, [
+                        'ATT-'.$master->id,
+                        $master->site?->name ?? 'Unknown Site',
+                        $master->month,
+                        $master->user_type,
+                        $emp->id,
+                        trim($emp->first_name.' '.$emp->last_name),
+                        $emp->position,
+                        $day['date'],
+                        $day['day'],
+                        $day['day_name'],
+                        $day['is_weekend'] ? 1 : 0,
+                        $present,
+                        $att ? $att->shift : null,
+                        $att ? ($att->is_ot ? 1 : 0) : 0,
+                    ]);
+                }
+            }
+            fclose($out);
+        };
+        return response()->streamDownload($callback, $fileName, $headers);
+    }
+
+    /**
      * Delete attendance record
      */
     public function destroy($id)
     {
         try {
             DB::beginTransaction();
-
             $master = EmployeeAttendanceMaster::findOrFail($id);
+            if ($master->status === EmployeeAttendanceMaster::STATUS_LOCKED) {
+                return redirect()->back()->with('error', 'Locked attendance cannot be deleted.');
+            }
             
             // Delete all related details first
             EmployeeAttendanceDetail::where('attendance_master_id', $id)->delete();
             
             // Delete master record
+            $before = $master->toArray();
             $master->delete();
 
             DB::commit();
-
+            $this->logAudit($id, 'delete', $before, null, null, request());
             return redirect()->back()->with('success', 'Attendance record deleted successfully.');
 
         } catch (\Exception $e) {

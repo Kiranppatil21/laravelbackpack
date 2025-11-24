@@ -11,18 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('client_taxes', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('client_id')->constrained()->onDelete('cascade');
-            $table->enum('tax_status', ['active', 'inactive', 'applicable'])->default('applicable');
-            $table->string('tax_type', 50); // GST, IGST, CGST, SGST, Service Tax, etc.
-            $table->decimal('tax_percent', 5, 2)->nullable();
-            $table->string('tax_number', 50)->nullable();
-            $table->timestamps();
-            
-            $table->index(['client_id', 'tax_status']);
-            $table->index(['client_id', 'tax_type']);
-        });
+        if (! Schema::hasTable('client_taxes')) {
+            Schema::create('client_taxes', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('client_id')->constrained()->onDelete('cascade');
+                $table->enum('tax_status', ['active', 'inactive', 'applicable'])->default('applicable');
+                $table->string('tax_type', 50); // GST, IGST, CGST, SGST, Service Tax, etc.
+                $table->decimal('tax_percent', 5, 2)->nullable();
+                $table->string('tax_number', 50)->nullable();
+                $table->timestamps();
+                
+                $table->index(['client_id', 'tax_status']);
+                $table->index(['client_id', 'tax_type']);
+            });
+        }
     }
 
     /**

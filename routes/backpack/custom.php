@@ -119,6 +119,12 @@ Route::group([
         Route::get('/', 'BulkAttendanceController@index')->name('index');
         Route::post('search', 'BulkAttendanceController@search')->name('search');
         Route::post('store', 'BulkAttendanceController@store')->name('store');
+        Route::post('{id}/submit', 'BulkAttendanceController@submit')->name('submit');
+        Route::post('{id}/approve', 'BulkAttendanceController@approve')->name('approve');
+        Route::post('{id}/lock', 'BulkAttendanceController@lock')->name('lock');
+        Route::get('{id}/audits', 'BulkAttendanceController@audits')->name('audits');
+        Route::get('{id}/summary', 'BulkAttendanceController@summary')->name('summary');
+        Route::get('{id}/export.csv', 'BulkAttendanceController@exportCsv')->name('export.csv');
         Route::get('view', 'BulkAttendanceController@view')->name('view');
         Route::get('{id}/show', 'BulkAttendanceController@show')->name('show');
         Route::delete('{id}', 'BulkAttendanceController@destroy')->name('destroy');

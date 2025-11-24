@@ -1248,7 +1248,8 @@ $(document).ready(function() {
 
     // Build attendance table
     function buildAttendanceTable(data) {
-        const { employees, calendar, site, existing_attendance } = data;
+        const { employees, calendar, site, existing_attendance, master } = data;
+        window.masterRecord = master || null;
         
         console.log('=== BUILD TABLE DEBUG ===');
         console.log('Employees received:', employees);
@@ -1274,20 +1275,38 @@ $(document).ready(function() {
             hasExistingData: hasExistingData
         });
         
+        // Show status + mode message
+        const status = master && master.status ? master.status : (hasExistingData ? 'submitted' : 'draft');
+        let statusBadge = '';
+        if (status === 'draft') statusBadge = '<span class="badge bg-secondary">Draft</span>';
+        if (status === 'submitted') statusBadge = '<span class="badge bg-info">Submitted</span>';
+        if (status === 'approved') statusBadge = '<span class="badge bg-success">Approved</span>';
+        if (status === 'locked') statusBadge = '<span class="badge bg-dark">Locked</span>';
+
         // Show edit mode message if there's existing data
         if (hasExistingData) {
             const existingCount = Object.keys(existing_attendance).length;
             $('#attendance-info').html(`
                 <div class="alert alert-info mb-3">
-                    <i class="la la-edit"></i> <strong>Edit Mode:</strong> 
-                    Attendance data already exists for <strong>${site.name}</strong> in the selected month. 
-                    <br><small><i class="la la-info-circle"></i> Found <strong>${existingCount}</strong> existing attendance records. 
-                    Previously submitted attendance is shown as checked checkboxes. You can modify and resubmit.</small>
-                    <br><small class="text-muted"><i class="la la-lightbulb"></i> Use the edit controls above to revert changes, clear all, or delete the entire attendance record.</small>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="la la-edit"></i> <strong>Edit Mode:</strong> Attendance for <strong>${site.name}</strong> · ${statusBadge}
+                            <br><small><i class="la la-info-circle"></i> Found <strong>${existingCount}</strong> existing attendance records. You can modify and resubmit.</small>
+                        </div>
+                        <div>
+                            ${master && master.status === 'draft' ? '<button class="btn btn-sm btn-outline-primary" id="btn-submit"><i class="la la-paper-plane"></i> Submit</button>' : ''}
+                            ${master && master.status === 'submitted' ? '<button class="btn btn-sm btn-outline-success ms-1" id="btn-approve"><i class="la la-check"></i> Approve</button>' : ''}
+                            ${master && master.status === 'approved' ? '<button class="btn btn-sm btn-outline-dark ms-1" id="btn-lock"><i class="la la-lock"></i> Lock</button>' : ''}
+                            ${master ? '<a class="btn btn-sm btn-success ms-1" target="_blank" href="/admin/bulk-attendance/'+master.id+'/export.csv"><i class=\"la la-download\"></i> CSV</a>' : ''}
+                        </div>
+                    </div>
                 </div>
             `);
             $('#submit-attendance-btn').html('<i class="la la-save"></i> Update Attendance');
             $('#edit-mode-controls').show(); // Show edit controls
+            if (master && master.status === 'locked') {
+                $('#submit-attendance-btn').prop('disabled', true).text('Locked');
+            }
         } else {
             $('#attendance-info').html(`
                 <div class="alert alert-success mb-3">
@@ -1497,6 +1516,8 @@ $(document).ready(function() {
         
         // Verify existing attendance is properly displayed
         if (hasExistingData) {
+            // Ensure any missed checks are applied based on existing_attendance
+            try { window.verifyExistingAttendance && window.verifyExistingAttendance(); } catch(e) { console.warn('verifyExistingAttendance error', e); }
             setTimeout(() => {
                 const checkedCheckboxes = $('.shift-checkbox:checked, .ot-input:checked').length;
                 const existingAttendanceCheckboxes = $('.existing-attendance:checked').length;
@@ -1549,7 +1570,9 @@ $(document).ready(function() {
         
         Object.keys(existing).forEach(key => {
             const attendance = existing[key];
-            const [employeeId, date] = key.split('-');
+            const sep = key.indexOf('-');
+            const employeeId = key.substring(0, sep);
+            const date = key.substring(sep + 1);
             
             // Check and fix S1
             if (attendance.shift_1) {
@@ -1693,6 +1716,7 @@ $(document).ready(function() {
     $(document).on('change', '.shift-checkbox, .ot-input', function() {
         const employeeId = $(this).data('employee-id');
         const day = $(this).data('day');
+        const date = $(this).data('date');
         
         console.log('Checkbox changed:', {
             checkbox: $(this).attr('class'),
@@ -1700,6 +1724,23 @@ $(document).ready(function() {
             day: day,
             checked: $(this).is(':checked')
         });
+
+        // Enforce mutually exclusive shift selection per employee/date
+        if ($(this).hasClass('shift-checkbox') && $(this).is(':checked')) {
+            const currentShift = $(this).data('shift');
+            // Uncheck other shift checkboxes for same employee/date
+            $(`.shift-checkbox[data-employee-id="${employeeId}"][data-date="${date}"]`).not(this).each(function() {
+                if ($(this).is(':checked')) {
+                    console.log('Unchecking conflicting shift', {
+                        employeeId: employeeId,
+                        date: date,
+                        shift: $(this).data('shift'),
+                        keptShift: currentShift
+                    });
+                    $(this).prop('checked', false);
+                }
+            });
+        }
         
         // Update employee total
         updateEmployeeTotal(employeeId);
@@ -1924,6 +1965,68 @@ $(document).ready(function() {
             updateAllTotals();
             showMessage('warning', 'All attendance data cleared for the current month.');
         }
+    });
+
+    // Submit/Approve/Lock handlers for master workflow
+    $(document).on('click', '#btn-submit', function () {
+        if (!window.masterRecord) return;
+        const id = window.masterRecord.id;
+        const self = $(this);
+        self.prop('disabled', true).html('<i class="la la-spinner la-spin"></i> Submitting...');
+        $.ajax({
+            url: `/admin/bulk-attendance/${id}/submit`,
+            type: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function (res) {
+                showMessage('success', res.message || 'Submitted.');
+                setTimeout(() => location.reload(), 800);
+            },
+            error: function (xhr) {
+                showMessage('error', xhr.responseJSON?.message || 'Submit failed');
+            },
+            complete: function () { self.prop('disabled', false).html('<i class="la la-paper-plane"></i> Submit'); }
+        });
+    });
+
+    $(document).on('click', '#btn-approve', function () {
+        if (!window.masterRecord) return;
+        const id = window.masterRecord.id;
+        const self = $(this);
+        self.prop('disabled', true).html('<i class="la la-spinner la-spin"></i> Approving...');
+        $.ajax({
+            url: `/admin/bulk-attendance/${id}/approve`,
+            type: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function (res) {
+                showMessage('success', res.message || 'Approved.');
+                setTimeout(() => location.reload(), 800);
+            },
+            error: function (xhr) {
+                showMessage('error', xhr.responseJSON?.message || 'Approve failed');
+            },
+            complete: function () { self.prop('disabled', false).html('<i class="la la-check"></i> Approve'); }
+        });
+    });
+
+    $(document).on('click', '#btn-lock', function () {
+        if (!window.masterRecord) return;
+        const id = window.masterRecord.id;
+        if (!confirm('Locking will prevent further edits. Continue?')) return;
+        const self = $(this);
+        self.prop('disabled', true).html('<i class="la la-spinner la-spin"></i> Locking...');
+        $.ajax({
+            url: `/admin/bulk-attendance/${id}/lock`,
+            type: 'POST',
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            success: function (res) {
+                showMessage('success', res.message || 'Locked.');
+                setTimeout(() => location.reload(), 800);
+            },
+            error: function (xhr) {
+                showMessage('error', xhr.responseJSON?.message || 'Lock failed');
+            },
+            complete: function () { self.prop('disabled', false).html('<i class="la la-lock"></i> Lock'); }
+        });
     });
 
     // Handle Revert Changes button (Edit Mode)

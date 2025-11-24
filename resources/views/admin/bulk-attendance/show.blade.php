@@ -102,9 +102,29 @@
                             data-bs-target="#attendanceTable" aria-expanded="true">
                         <i class="la la-eye"></i> Toggle View
                     </button>
+                    <button class="btn btn-sm btn-dark" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#auditPanel" aria-expanded="false">
+                        <i class="la la-history"></i> Audit Trail
+                    </button>
+                    <a class="btn btn-sm btn-success" href="{{ route('admin.bulk-attendance.export.csv', $master->id) }}" target="_blank" title="Download presence CSV">
+                        <i class="la la-download"></i> CSV
+                    </a>
+                    <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="modal" data-bs-target="#presencePreviewModal" title="Preview Presence Matrix">
+                        <i class="la la-table"></i> Preview
+                    </button>
                 </div>
             </div>
             <div class="card-body collapse show" id="attendanceTable">
+                {{-- Presence Legend --}}
+                <div class="mb-3 small">
+                    <strong>Legend:</strong>
+                    <span class="badge bg-primary">S1</span> Shift 1
+                    <span class="badge bg-info">S2</span> Shift 2
+                    <span class="badge bg-success">S3</span> Shift 3
+                    <span class="badge bg-warning text-dark">OT</span> Overtime
+                    <span class="badge bg-danger">Absent</span> No record
+                    <span class="px-2 py-1 border bg-light">Weekend</span>
+                </div>
                 @if($attendanceByEmployee->count() > 0)
                     <div class="table-responsive" style="max-height: 600px; overflow-x: auto;">
                         <table class="table table-bordered table-hover table-sm">
@@ -157,7 +177,7 @@
                                                         </div>
                                                     @endif
                                                 @else
-                                                    <span class="text-muted">-</span>
+                                                    <span class="badge bg-danger">Absent</span>
                                                 @endif
                                             </td>
                                         @endforeach
@@ -236,6 +256,37 @@
                 </div>
             </div>
         @endif
+        {{-- Audit Trail Panel --}}
+        <div class="card mt-3 collapse" id="auditPanel">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="card-title mb-0"><i class="la la-history"></i> Audit Trail (Latest)</h3>
+                <div>
+                    <button class="btn btn-sm btn-outline-secondary" id="btn-refresh-audits"><i class="la la-refresh"></i> Refresh</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div id="audit-loading" class="text-center my-3" style="display:none;">
+                    <i class="la la-spinner la-spin" style="font-size:2rem;"></i>
+                    <p class="mt-2 text-muted">Loading audits...</p>
+                </div>
+                <div id="audit-empty" class="alert alert-info" style="display:none;">
+                    <i class="la la-info-circle"></i> No audit entries found for this record yet.
+                </div>
+                <div class="table-responsive" id="audit-table-wrapper" style="display:none;">
+                    <table class="table table-sm table-bordered table-striped mb-0" id="audit-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Action</th>
+                                <th>User</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 @endsection
@@ -282,6 +333,7 @@
     .badge {
         font-size: 0.7rem;
     }
+    .card-tools > .btn, .card-tools > a { margin-left: 4px; }
     
     .card {
         border-radius: 8px;
@@ -307,4 +359,117 @@
         font-size: 0.8rem;
     }
 </style>
+@endpush
+
+@push('after_scripts')
+<script>
+    (function() {
+        const masterId = {{ $master->id }};
+        const loadAudits = () => {
+            $('#audit-loading').show();
+            $('#audit-empty').hide();
+            $('#audit-table-wrapper').hide();
+            $.get(`/admin/bulk-attendance/${masterId}/audits`, function(resp) {
+                $('#audit-loading').hide();
+                if (!resp.success || resp.count === 0) {
+                    $('#audit-empty').show();
+                    return;
+                }
+                const tbody = $('#audit-table tbody');
+                tbody.empty();
+                resp.audits.forEach(a => {
+                    const tr = $('<tr/>');
+                    tr.append(`<td>${a.id}</td>`);
+                    tr.append(`<td><span class="badge bg-secondary text-uppercase">${a.action}</span></td>`);
+                    tr.append(`<td>${a.changed_by_name ?? (a.changed_by ? 'User #'+a.changed_by : 'N/A')}</td>`);
+                    tr.append(`<td>${a.created_at}</td>`);
+                    tbody.append(tr);
+                });
+                $('#audit-table-wrapper').show();
+            }).fail(() => {
+                $('#audit-loading').hide();
+                $('#audit-empty').show().removeClass('alert-info').addClass('alert-danger').html('<i class="la la-exclamation-triangle"></i> Failed to load audits.');
+            });
+        };
+        $('#btn-refresh-audits').on('click', loadAudits);
+        // Auto-load when panel first shown
+        document.getElementById('auditPanel').addEventListener('shown.bs.collapse', function () { loadAudits(); });
+                // Presence preview modal logic
+                const previewBody = $('#presence-preview-body');
+                const filterSelect = $('#presence-filter');
+                const loadMatrix = () => {
+                        previewBody.html('<div class="text-center p-3"><i class="la la-spinner la-spin"></i> Loading...</div>');
+                        $.get(`/admin/bulk-attendance/${masterId}/summary`, function(resp){
+                                if(!resp.success){
+                                        previewBody.html('<div class="alert alert-danger">Failed to load summary.</div>');
+                                        return;
+                                }
+                                const filter = filterSelect.val();
+                                let html = '<div class="table-responsive" style="max-height:60vh;overflow:auto"><table class="table table-sm table-bordered"><thead><tr><th>Employee</th>';
+                                if(resp.matrix[0]){
+                                        resp.matrix[0].days.forEach(d => { html += `<th class='text-center' style='min-width:42px'>${d.day}</th>`; });
+                                }
+                                html += '</tr></thead><tbody>';
+                                resp.matrix.forEach(row => {
+                                        html += `<tr><th class='text-nowrap'>${row.name}</th>`;
+                                        row.days.forEach(d => {
+                                                const present = d.present;
+                                                if(filter==='present' && !present) { html += '<td class="bg-light text-muted">-</td>'; return; }
+                                                if(filter==='absent' && present) { html += '<td class="bg-light text-muted">-</td>'; return; }
+                                                if(present){
+                                                        const shiftBadge = d.shift ? (d.shift==='1'?'primary':(d.shift==='2'?'info':'success')) : 'secondary';
+                                                        html += `<td class='text-center'><span class='badge bg-${shiftBadge}'>S${d.shift}</span>${d.is_ot?'<span class="badge bg-warning text-dark ms-1">OT</span>':''}</td>`;
+                                                } else {
+                                                        html += `<td class='text-center'><span class='badge bg-danger'>A</span></td>`;
+                                                }
+                                        });
+                                        html += '</tr>';
+                                });
+                                html += '</tbody></table></div>';
+                                previewBody.html(html);
+                        }).fail(()=>{
+                                previewBody.html('<div class="alert alert-danger">Error loading matrix.</div>');
+                        });
+                };
+                $('#presencePreviewModal').on('shown.bs.modal', loadMatrix);
+                filterSelect.on('change', loadMatrix);
+                $('#download-filtered-csv').on('click', function(){
+                        const f = filterSelect.val();
+                        const url = `/admin/bulk-attendance/${masterId}/export.csv${f?`?filter=${f}`:''}`;
+                        window.open(url, '_blank');
+                });
+    })();
+</script>
+@endpush
+
+@push('after_content')
+<div class="modal fade" id="presencePreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="la la-table"></i> Presence Matrix Preview</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="input-group input-group-sm" style="max-width:240px;">
+                        <label class="input-group-text" for="presence-filter">Filter</label>
+                        <select id="presence-filter" class="form-select">
+                            <option value="all">All</option>
+                            <option value="present">Present Only</option>
+                            <option value="absent">Absent Only</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button id="download-filtered-csv" class="btn btn-sm btn-success"><i class="la la-download"></i> Download Filtered CSV</button>
+                    </div>
+                </div>
+                <div id="presence-preview-body"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endpush
