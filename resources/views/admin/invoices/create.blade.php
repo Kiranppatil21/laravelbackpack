@@ -2,6 +2,7 @@
 
 @push('before_styles')
 <meta name="csrf-token" content="{{ csrf_token() }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker.min.css">
 @endpush
 
 @section('title', 'Create Invoice')
@@ -48,8 +49,8 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label for="month">Month *</label>
-                        <input type="text" name="month" id="month" class="form-control" 
-                               placeholder="e.g., January 2024" required>
+                        <input type="text" name="month" id="month" class="form-control datepicker" 
+                               placeholder="Select Month and Year" required readonly>
                     </div>
                 </div>
                 
@@ -326,6 +327,18 @@
 </div>
 
 @push('after_scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('.datepicker').datepicker({
+        format: 'MM yyyy',
+        minViewMode: 'months',
+        autoclose: true,
+        todayHighlight: true,
+        startView: 'months'
+    });
+});
+</script>
 <script>
 let employeeIndex = 0;
 let chargeIndex = 0;
@@ -343,18 +356,29 @@ $(document).ready(function() {
             return;
         }
         
+        // Convert month from "MM yyyy" to "yyyy-mm" format
+        const monthDate = new Date(month + ' 1');
+        const formattedMonth = monthDate.getFullYear() + '-' + 
+                              String(monthDate.getMonth() + 1).padStart(2, '0');
+        
         $.ajax({
             url: '{{ url("admin/client-invoice/get-attendance") }}',
             method: 'POST',
             data: {
                 _token: $('meta[name="csrf-token"]').attr('content'),
                 client_id: clientId,
-                month: month
+                month: formattedMonth
             },
             success: function(response) {
                 if (response.success) {
                     populateEmployeeTable(response.employees);
                     $('#employee-table-container').show();
+                    
+                    // Update totals from backend response
+                    $('#total-duty-days').text(response.total_duty_days.toFixed(2));
+                    $('#total-ot-hours').text(response.total_ot_hours.toFixed(2));
+                    $('#total-all-payment').text('₹' + response.total.toFixed(2));
+                    
                     calculateTotals();
                 } else {
                     alert('Error: ' + response.message);
@@ -668,25 +692,16 @@ function calculateTotals() {
 }
 
 function updateEmployeeTotals() {
-    let totalDutyDays = 0;
-    let totalOTHours = 0;
     let totalPayment = 0;
     let totalOTPayment = 0;
-    let totalAllPayment = 0;
     
     $('#employee-tbody tr').each(function() {
-        totalDutyDays += parseFloat($(this).find('input[name*="[duty_days]"]').val()) || 0;
-        totalOTHours += parseFloat($(this).find('input[name*="[overtime_hours]"]').val()) || 0;
         totalPayment += parseFloat($(this).find('.emp-payment').val()) || 0;
         totalOTPayment += parseFloat($(this).find('.emp-ot-payment').val()) || 0;
-        totalAllPayment += parseFloat($(this).find('.emp-total').val()) || 0;
     });
     
-    $('#total-duty-days').text(totalDutyDays.toFixed(2));
-    $('#total-ot-hours').text(totalOTHours.toFixed(2));
     $('#total-payment').text('₹' + totalPayment.toFixed(2));
     $('#total-ot-payment').text('₹' + totalOTPayment.toFixed(2));
-    $('#total-all-payment').text('₹' + totalAllPayment.toFixed(2));
 }
 
 function updateHiddenFields() {

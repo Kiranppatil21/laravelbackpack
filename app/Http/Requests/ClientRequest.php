@@ -27,7 +27,14 @@ class ClientRequest extends FormRequest
         return [
             'name' => 'required|min:2|max:255',
             'email' => 'required|email|unique:clients,email,'.$this->id,
-            // Add more as needed
+            // Financial / billing fields
+            'billing_rate' => 'nullable|numeric|min:0',
+            'salary_cost' => 'nullable|numeric|min:0',
+            'esi_rate' => 'nullable|numeric|min:0|max:100',
+            'pf_rate' => 'nullable|numeric|min:0|max:100',
+            'licensing_cost' => 'nullable|numeric|min:0',
+            'administrative_overhead' => 'nullable|numeric|min:0',
+            'gross_margin' => 'nullable|numeric|min:0',
         ];
     }
 

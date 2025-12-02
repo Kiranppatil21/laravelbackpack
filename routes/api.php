@@ -16,18 +16,19 @@ use App\Http\Controllers\Api\PayslipController;
 |
 */
 
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
 
 // Public visitor check-in for kiosks / IoT devices (optionally protected by header)
-Route::post('/visitors/checkin', [\App\Http\Controllers\Api\VisitorController::class, 'checkIn'])->middleware(\App\Http\Middleware\VerifyVisitorApiKey::class);
+Route::post('/visitors/checkin', [\App\Http\Controllers\Api\VisitorController::class, 'checkIn'])
+    ->middleware([\App\Http\Middleware\VerifyVisitorApiKey::class, 'throttle:60,1']); // 60 check-ins per minute
 
 // Public mobile app endpoints
-Route::get('/mobile/config', [App\Http\Controllers\Api\MobileAppController::class, 'getAppConfig']);
-Route::post('/mobile/generate-qr', [App\Http\Controllers\Api\MobileAppController::class, 'generateQRCode']);
-Route::post('/mobile/scan-qr', [App\Http\Controllers\Api\MobileAppController::class, 'scanQRCode']);
-Route::get('/mobile/visitor-status', [App\Http\Controllers\Api\MobileAppController::class, 'getVisitorStatus']);
-Route::get('/mobile/invitations', [App\Http\Controllers\Api\MobileAppController::class, 'getInvitations']);
+Route::get('/mobile/config', [App\Http\Controllers\Api\MobileAppController::class, 'getAppConfig'])->middleware('throttle:100,1');
+Route::post('/mobile/generate-qr', [App\Http\Controllers\Api\MobileAppController::class, 'generateQRCode'])->middleware('throttle:50,1');
+Route::post('/mobile/scan-qr', [App\Http\Controllers\Api\MobileAppController::class, 'scanQRCode'])->middleware('throttle:50,1');
+Route::get('/mobile/visitor-status', [App\Http\Controllers\Api\MobileAppController::class, 'getVisitorStatus'])->middleware('throttle:100,1');
+Route::get('/mobile/invitations', [App\Http\Controllers\Api\MobileAppController::class, 'getInvitations'])->middleware('throttle:100,1');
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);

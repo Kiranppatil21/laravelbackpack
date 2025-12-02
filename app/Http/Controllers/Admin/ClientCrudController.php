@@ -23,11 +23,6 @@ class ClientCrudController extends CrudController
     use \Backpack\CRUD\app\Http\Controllers\Operations\ShowOperation;
     use \Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
 
-    /**
-     * Configure the CrudPanel object. Apply settings to all operations.
-     *
-     * @return void
-     */
     public function setup()
     {
         CRUD::setModel(\App\Models\Client::class);
@@ -35,32 +30,26 @@ class ClientCrudController extends CrudController
         CRUD::setEntityNameStrings('client', 'clients');
     }
 
-    /**
-     * Override the create method to use our custom form
-     */
-    public function create()
-    {
-        // Redirect to our custom create form
-        return redirect()->route('client.create-custom');
-    }
-
-    /**
-     * Define what happens when the List operation is loaded.
-     *
-     * @see  https://backpackforlaravel.com/docs/crud-operation-list-entries
-     *
-     * @return void
-     */
     protected function setupListOperation()
     {
         CRUD::setFromDb(); // set columns from db columns.
 
+        // Super Admin can see all clients
+        if (backpack_user() && backpack_user()->hasRole('Super Admin')) {
+            // No filtering for Super Admin - show all clients
+        }
+
         // If the current user is an agency_owner, only show their agency's records
-        if (backpack_user()->hasRole('agency_owner') && backpack_user()->tenant_id) {
+        elseif (backpack_user() && backpack_user()->hasRole('agency_owner') && backpack_user()->tenant_id) {
             $this->crud->addClause('where', 'tenant_id', backpack_user()->tenant_id);
         }
 
-        // Add visible columns here (see below)
+        // For other users, show clients in their tenant (if they have one)
+        elseif (backpack_user() && backpack_user()->tenant_id) {
+            $this->crud->addClause('where', 'tenant_id', backpack_user()->tenant_id);
+        }
+
+        // Add visible columns here
         $this->crud->addColumn(['name' => 'name', 'label' => 'Client Name']);
         $this->crud->addColumn(['name' => 'email', 'label' => 'Email']);
         $this->crud->addColumn([
@@ -69,23 +58,14 @@ class ClientCrudController extends CrudController
             'label' => 'Agency',
             'attribute' => 'name',
         ]);
-        // Add more columns as you need
     }
 
-    /**
-     * Define what happens when the Create operation is loaded.
-     *
-     * @see https://backpackforlaravel.com/docs/crud-operation-create
-     *
-     * @return void
-     */
     protected function setupCreateOperation()
     {
         CRUD::setValidation(ClientRequest::class);
-        CRUD::setFromDb(); // set fields from db columns.
-
-        // (Optional) If using FormRequest validation
-        $this->crud->setValidation(\App\Http\Requests\ClientRequest::class);
+        // Avoid `setFromDb()` here because it can infer PRO-only field types
+        // (like `date_picker`) from the DB column types. Define fields
+        // explicitly below to ensure only core Backpack field types are used.
 
         // Add form fields
         $this->crud->addField([
@@ -93,15 +73,17 @@ class ClientCrudController extends CrudController
             'type' => 'text',
             'label' => 'Client Name',
         ]);
+
         $this->crud->addField([
             'name' => 'email',
             'type' => 'email',
             'label' => 'Email',
         ]);
-        // Agency selector (optional)
+
+        // Agency selector
         $this->crud->addField([
             'label' => 'Agency',
-            'type' => 'select2',
+            'type' => 'select',
             'name' => 'agency_id',
             'entity' => 'agency',
             'attribute' => 'name',
@@ -110,17 +92,107 @@ class ClientCrudController extends CrudController
                 'class' => 'form-group col-md-6',
             ],
         ]);
-        // Add additional fields as needed, for example:
-        // $this->crud->addField([...]);
+
+        $this->crud->addField([
+            'name' => 'dob',
+            'type' => 'date',
+            'label' => 'Date of Birth',
+            'attributes' => [
+                'class' => 'form-control',
+            ],
+        ]);
+
+        $this->crud->addField([
+            'name' => 'date_of_anniversary',
+            'type' => 'date',
+            'label' => 'Anniversary Date',
+            'attributes' => [
+                'class' => 'form-control',
+            ],
+        ]);
+
+        // Financial / billing fields
+        $this->crud->addField([
+            'name' => 'billing_rate',
+            'type' => 'number',
+            'label' => 'Billing Rate',
+            'attributes' => [
+                'step' => '0.01',
+                'min' => '0',
+            ],
+            'wrapper' => [ 'class' => 'form-group col-md-4' ],
+        ]);
+
+        $this->crud->addField([
+            'name' => 'salary_cost',
+            'type' => 'number',
+            'label' => 'Salary Cost',
+            'attributes' => [
+                'step' => '0.01',
+                'min' => '0',
+            ],
+            'wrapper' => [ 'class' => 'form-group col-md-4' ],
+        ]);
+
+        $this->crud->addField([
+            'name' => 'esi_rate',
+            'type' => 'number',
+            'label' => 'ESI Rate (%)',
+            'attributes' => [
+                'step' => '0.01',
+                'min' => '0',
+                'max' => '100',
+            ],
+            'wrapper' => [ 'class' => 'form-group col-md-4' ],
+        ]);
+
+        $this->crud->addField([
+            'name' => 'pf_rate',
+            'type' => 'number',
+            'label' => 'PF Rate (%)',
+            'attributes' => [
+                'step' => '0.01',
+                'min' => '0',
+                'max' => '100',
+            ],
+            'wrapper' => [ 'class' => 'form-group col-md-4' ],
+        ]);
+
+        $this->crud->addField([
+            'name' => 'licensing_cost',
+            'type' => 'number',
+            'label' => 'Licensing Cost',
+            'attributes' => [
+                'step' => '0.01',
+                'min' => '0',
+            ],
+            'wrapper' => [ 'class' => 'form-group col-md-4' ],
+        ]);
+
+        $this->crud->addField([
+            'name' => 'administrative_overhead',
+            'type' => 'number',
+            'label' => 'Administrative Overhead',
+            'attributes' => [
+                'step' => '0.01',
+                'min' => '0',
+            ],
+            'wrapper' => [ 'class' => 'form-group col-md-4' ],
+        ]);
+
+        $this->crud->addField([
+            'name' => 'gross_margin',
+            'type' => 'number',
+            'label' => 'Gross Margin',
+            'attributes' => [
+                'step' => '0.01',
+                'min' => '0',
+            ],
+            'hint' => 'Store gross margin as a monetary value. Consider computing percentage in reports.',
+            'wrapper' => [ 'class' => 'form-group col-md-4' ],
+        ]);
     }
 
-    /**
-     * Define what happens when the Update operation is loaded.
-     *
-     * @see https://backpackforlaravel.com/docs/crud-operation-update
-     *
-     * @return void
-     */
     protected function setupUpdateOperation()
     {
         $this->setupCreateOperation();
@@ -128,12 +200,11 @@ class ClientCrudController extends CrudController
 
     public function store()
     {
-    $this->authorize('create', \App\Models\Client::class);
+        $this->authorize('create', \App\Models\Client::class);
 
-    // parent::store() is provided via Backpack operation traits at runtime; PHPStan
-    // sometimes cannot trace these trait-provided methods on the parent type.
-    // @phpstan-ignore-next-line
-    return parent::store();
+        // parent::store() is provided via Backpack operation traits at runtime
+        // @phpstan-ignore-next-line
+        return parent::store();
     }
 
     public function update()
@@ -143,8 +214,8 @@ class ClientCrudController extends CrudController
             $this->authorize('update', $entry);
         }
 
-    // @phpstan-ignore-next-line
-    return parent::update();
+        // @phpstan-ignore-next-line
+        return parent::update();
     }
 
     public function destroy($id = null)
@@ -158,7 +229,7 @@ class ClientCrudController extends CrudController
             $this->authorize('delete', $entry);
         }
 
-    // @phpstan-ignore-next-line
-    return parent::destroy($id);
+        // @phpstan-ignore-next-line
+        return parent::destroy($id);
     }
 }

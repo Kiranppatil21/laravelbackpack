@@ -162,6 +162,10 @@ class EmployeeCrudController extends CrudController
     {
         CRUD::setValidation(EmployeeRequest::class);
 
+        // Determine the current client assignment so the select stays populated on update
+        $currentEntry = $this->crud->getCurrentEntry();
+        $selectedClientId = $currentEntry ? $currentEntry->client_id : $this->crud->getRequest()->query('client_id');
+
         // Set page title
         CRUD::setTitle('Raj Security Services | Add Employee', 'create');
         CRUD::setHeading('Add Employee', 'create');
@@ -319,6 +323,7 @@ class EmployeeCrudController extends CrudController
             'attribute' => 'name',
             'model' => 'App\Models\Client',
             'allows_null' => true,
+            'value' => $selectedClientId,
             'wrapper' => ['class' => 'form-group col-md-6'],
             'hint' => 'Select a client to assign this employee to a specific project/site',
         ]);

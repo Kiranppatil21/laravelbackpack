@@ -69,7 +69,7 @@ Route::group([
         Route::get('permissions/ajax-search', 'PermissionCrudController@ajaxSearch')->name('permission.ajax.search');
     });
     Route::crud('agency', 'AgencyCrudController');
-    Route::crud('client', 'ClientCrudController');
+    // Route::crud('client', 'ClientCrudController'); // Removed duplicate - defined below with Super Admin protection
     Route::crud('employee', 'EmployeeCrudController');
     // Generate ID card for employee
     Route::get('employee/{id}/generate-id-card', 'EmployeeCrudController@generateIdCard')->name('admin.employee.generate-id-card');
@@ -84,6 +84,8 @@ Route::group([
     Route::prefix('client')->name('client.')->group(function () {
         Route::get('create-custom', 'ClientController@create')->name('create-custom');
         Route::post('store-custom', 'ClientController@store')->name('store-custom');
+        Route::get('{client}/edit-custom', 'ClientController@edit')->name('edit-custom');
+        Route::put('{client}/update-custom', 'ClientController@update')->name('update-custom');
         Route::get('{client}/contacts', 'ClientController@contacts')->name('contacts');
         Route::get('{client}/taxes', 'ClientController@taxes')->name('taxes');
     });

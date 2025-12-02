@@ -341,12 +341,12 @@ class ClientInvoiceCrudController extends CrudController
         try {
             // Get employees assigned to this client
             $employees = Employee::where('client_id', $clientId)->get();
-            
+
             $attendanceData = [];
-            
+
             foreach ($employees as $employee) {
                 // Get attendance data from bulk attendance system
-                $attendance = EmployeeAttendanceMaster::where('employee_id', $employee->id)
+                $attendance = EmployeeAttendanceMaster::where('site_id', $clientId)
                     ->where('month', $month)
                     ->first();
 
@@ -355,14 +355,19 @@ class ClientInvoiceCrudController extends CrudController
 
                 if ($attendance) {
                     // Calculate duty days and overtime from attendance details
-                    $details = $attendance->details ?? collect();
-                    $dutyDays = $details->sum('working_hours') / 8; // Assuming 8 hours per day
-                    $overtimeHours = $details->sum('overtime_hours');
+                    $details = $attendance->details()->where('employee_id', $employee->id)->get();
+
+                    // Count present days as duty days
+                    $dutyDays = $details->where('is_present', true)->count();
+
+                    // Count OT days and assume 4 hours per OT day (can be adjusted)
+                    $overtimeDays = $details->where('is_ot', true)->count();
+                    $overtimeHours = $overtimeDays * 4; // Assuming 4 hours per OT day
                 }
 
                 $dailyRate = $employee->monthly_salary ? ($employee->monthly_salary / 30) : 0;
                 $overtimeRate = $dailyRate * 1.5; // 1.5x for overtime
-                
+
                 $payment = $dutyDays * $dailyRate;
                 $overtimePayment = $overtimeHours * ($overtimeRate / 8); // Per hour rate
                 $totalPayment = $payment + $overtimePayment;
@@ -383,7 +388,9 @@ class ClientInvoiceCrudController extends CrudController
             return response()->json([
                 'success' => true,
                 'employees' => $attendanceData,
-                'total' => array_sum(array_column($attendanceData, 'total_payment'))
+                'total' => array_sum(array_column($attendanceData, 'total_payment')),
+                'total_duty_days' => array_sum(array_column($attendanceData, 'duty_days')),
+                'total_ot_hours' => array_sum(array_column($attendanceData, 'overtime_hours'))
             ]);
 
         } catch (\Exception $e) {

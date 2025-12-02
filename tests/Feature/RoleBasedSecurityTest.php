@@ -10,6 +10,7 @@ use App\Models\Agency;
 use App\Models\Attendance;
 use App\Models\Invoice;
 use App\Models\VisitLog;
+use Tests\Feature\TenantFactoryHelper;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 class RoleBasedSecurityTest extends TestCase
@@ -27,37 +28,42 @@ class RoleBasedSecurityTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        
+        // Ensure roles are seeded after DB refresh
+        $this->seed(\Database\Seeders\RoleSeeder::class);
+
+        // Create a tenant with id=1 for FKs
+        TenantFactoryHelper::createTenantWithId1();
+
         // Create users with different roles
         $this->superAdmin = User::factory()->create();
         $this->superAdmin->assignRole('Super Admin');
-        
+
         $this->agencyOwner = User::factory()->create();
         $this->agencyOwner->assignRole('Agency Owner');
         $this->agencyOwner->tenant_id = 1;
-        
+
         $this->hrUser = User::factory()->create();
         $this->hrUser->assignRole('HR');
         $this->hrUser->tenant_id = 1;
-        
+
         $this->clientUser = User::factory()->create();
         $this->clientUser->assignRole('Client');
         $this->clientUser->tenant_id = 1;
-        
+
         $this->guardUser = User::factory()->create();
         $this->guardUser->assignRole('Guard/Employee');
         $this->guardUser->tenant_id = 1;
-        
+
         $this->visitorUser = User::factory()->create();
         $this->visitorUser->assignRole('Visitor');
-        
+
         $this->policeUser = User::factory()->create();
         $this->policeUser->assignRole('Police');
-        
+
         // Create test data
         $agency = Agency::factory()->create(['tenant_id' => 1]);
         $client = Client::factory()->create(['tenant_id' => 1]);
-        
+
         Employee::factory()->create([
             'tenant_id' => 1,
             'client_id' => $client->id

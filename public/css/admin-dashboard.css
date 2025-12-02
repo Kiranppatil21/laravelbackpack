@@ -1,5 +1,15 @@
 /* Admin Dashboard Enhancements */
 
+/* Remove Tabler horizontal overlap pseudo-overlay so pages stay clickable */
+body[bp-layout="horizontal-overlap"] .navbar-overlap:after {
+    content: none !important;
+    display: none !important;
+    height: 0 !important;
+    pointer-events: none;
+    background: none !important;
+    position: static !important;
+}
+
 /* Widget Cards */
 .admin-widget {
     transition: all 0.3s ease;

@@ -20,10 +20,16 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);
 
+        // Seed core app roles & permissions used by tests and app logic
+        if (class_exists(\Database\Seeders\RoleSeeder::class)) {
+            $this->call(\Database\Seeders\RoleSeeder::class);
+        }
+
         // Run demo data by default for local/dev environments
         if (class_exists(\Database\Seeders\DemoSeeder::class) || class_exists(\Database\Seeders\DemoUsersSeeder::class)) {
             $this->call(\Database\Seeders\DemoSeeder::class);
         }
+
         $this->call([
             \Database\Seeders\DemoUsersSeeder::class,
         ]);

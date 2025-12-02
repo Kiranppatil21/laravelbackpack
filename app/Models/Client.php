@@ -52,6 +52,13 @@ class Client extends Authenticatable
         'primary_email_2',
         'additional_charges',
         'additional_charges_comment',
+        // Financial / billing fields for security-guard business
+        'billing_rate',
+        'salary_cost',
+        'esi_rate',
+        'pf_rate',
+        'licensing_cost',
+        'administrative_overhead',
         'password',
         'status',
         'sms_reports',
@@ -76,6 +83,13 @@ class Client extends Authenticatable
         'date_of_anniversary' => 'date',
         'tds_percentage' => 'decimal:2',
         'additional_charges' => 'decimal:2',
+        'billing_rate' => 'decimal:2',
+        'salary_cost' => 'decimal:2',
+        'esi_rate' => 'decimal:2',
+        'pf_rate' => 'decimal:2',
+        'licensing_cost' => 'decimal:2',
+        'administrative_overhead' => 'decimal:2',
+        // 'gross_margin' is computed dynamically; do not cast/store as static source of truth
         'sms_reports' => 'boolean',
         'sms_attendance' => 'boolean',
         'sms_bill' => 'boolean',
@@ -87,6 +101,14 @@ class Client extends Authenticatable
         'email_bill_reminder' => 'boolean',
         'email_payment_receipt' => 'boolean',
         'password' => 'hashed',
+    ];
+
+    /**
+     * Always append computed attributes to model arrays.
+     * @var array
+     */
+    protected $appends = [
+        'gross_margin',
     ];
 
     public function agency(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -197,5 +219,34 @@ class Client extends Authenticatable
             'pending' => 'Pending',
             'expired' => 'Expired'
         ];
+    }
+
+    /**
+     * Compute gross margin for a client based on billing and cost components.
+     * Formula (monetary): billing_rate - (salary_cost + licensing_cost + administrative_overhead + esi_amount + pf_amount)
+     * ESI/PF are applied as percentages against `salary_cost` when present.
+     *
+     * @return float
+     */
+    public function getGrossMarginAttribute(): float
+    {
+        $billing = $this->billing_rate !== null ? (float) $this->billing_rate : 0.0;
+        $salary = $this->salary_cost !== null ? (float) $this->salary_cost : 0.0;
+        $licensing = $this->licensing_cost !== null ? (float) $this->licensing_cost : 0.0;
+        $overhead = $this->administrative_overhead !== null ? (float) $this->administrative_overhead : 0.0;
+
+        $esiAmount = 0.0;
+        if ($this->esi_rate !== null) {
+            $esiAmount = $salary * ((float) $this->esi_rate / 100.0);
+        }
+
+        $pfAmount = 0.0;
+        if ($this->pf_rate !== null) {
+            $pfAmount = $salary * ((float) $this->pf_rate / 100.0);
+        }
+
+        $totalCosts = $salary + $licensing + $overhead + $esiAmount + $pfAmount;
+
+        return round($billing - $totalCosts, 2);
     }
 }

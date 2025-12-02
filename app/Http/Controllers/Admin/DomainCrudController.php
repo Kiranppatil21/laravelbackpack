@@ -50,7 +50,7 @@ class DomainCrudController extends CrudController
         CRUD::addField([
             'name' => 'tenant_id',
             'label' => 'Tenant',
-            'type' => 'select2',
+            'type' => 'select',
             'entity' => 'tenant',
             'attribute' => 'name',
             'model' => Tenant::class,

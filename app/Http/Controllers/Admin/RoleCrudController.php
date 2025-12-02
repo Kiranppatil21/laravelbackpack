@@ -55,17 +55,13 @@ class RoleCrudController extends CrudController
         // Use select2_from_ajax so admins can search existing permissions or create new ones inline.
         CRUD::addField([
             'label' => 'Permissions',
-            'type' => 'select2_from_ajax_multiple',
+            'type' => 'relationship',
             'name' => 'permissions', // relationship name on the Role model
             'entity' => 'permissions',
             'attribute' => 'name',
             'model' => 'Spatie\\Permission\\Models\\Permission',
             'pivot' => true,
-            'data_source' => url(config('backpack.base.route_prefix', 'admin').'/permission/ajax-search'),
-            'placeholder' => 'Search or create permissions',
-            'minimum_input_length' => 0,
-            // allow custom tags — select2 will attempt to post names not in list; we'll create them on save
-            'dependent' => null,
+            'placeholder' => 'Select permissions',
         ]);
     }
 

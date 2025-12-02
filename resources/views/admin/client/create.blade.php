@@ -29,7 +29,7 @@
     </div>
 @endif
 
-@if($errors->any())
+@if(isset($errors) && $errors->any())
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
         <strong>Error!</strong> Please fix the following issues:
         <ul class="mb-0 mt-2">
@@ -235,6 +235,63 @@
                         <label>Password</label>
                         <input type="password" name="password" class="form-control @error('password') is-invalid @enderror">
                         @error('password')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <!-- Financial / Billing Fields -->
+                    <h5 class="col-12 mt-4 mb-3">Financial / Billing</h5>
+
+                    <div class="form-group col-sm-4">
+                        <label>Billing Rate</label>
+                        <input type="number" step="0.01" min="0" name="billing_rate" class="form-control @error('billing_rate') is-invalid @enderror" 
+                               value="{{ old('billing_rate') }}">
+                        @error('billing_rate')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="form-group col-sm-4">
+                        <label>Salary Cost</label>
+                        <input type="number" step="0.01" min="0" name="salary_cost" class="form-control @error('salary_cost') is-invalid @enderror" 
+                               value="{{ old('salary_cost') }}">
+                        @error('salary_cost')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="form-group col-sm-4">
+                        <label>ESI Rate (%)</label>
+                        <input type="number" step="0.01" min="0" max="100" name="esi_rate" class="form-control @error('esi_rate') is-invalid @enderror" 
+                               value="{{ old('esi_rate') }}">
+                        @error('esi_rate')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="form-group col-sm-4">
+                        <label>PF Rate (%)</label>
+                        <input type="number" step="0.01" min="0" max="100" name="pf_rate" class="form-control @error('pf_rate') is-invalid @enderror" 
+                               value="{{ old('pf_rate') }}">
+                        @error('pf_rate')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="form-group col-sm-4">
+                        <label>Licensing Cost</label>
+                        <input type="number" step="0.01" min="0" name="licensing_cost" class="form-control @error('licensing_cost') is-invalid @enderror" 
+                               value="{{ old('licensing_cost') }}">
+                        @error('licensing_cost')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="form-group col-sm-4">
+                        <label>Administrative Overhead</label>
+                        <input type="number" step="0.01" min="0" name="administrative_overhead" class="form-control @error('administrative_overhead') is-invalid @enderror" 
+                               value="{{ old('administrative_overhead') }}">
+                        @error('administrative_overhead')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>

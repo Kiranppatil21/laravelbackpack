@@ -81,6 +81,13 @@ class ClientController extends Controller
             'pan_no' => 'nullable|string|max:15',
             'password' => 'nullable|string|min:6',
             'serial_no' => 'nullable|integer',
+            // Financial / billing fields
+            'billing_rate' => 'nullable|numeric|min:0',
+            'salary_cost' => 'nullable|numeric|min:0',
+            'esi_rate' => 'nullable|numeric|min:0|max:100',
+            'pf_rate' => 'nullable|numeric|min:0|max:100',
+            'licensing_cost' => 'nullable|numeric|min:0',
+            'administrative_overhead' => 'nullable|numeric|min:0',
         ];
 
         $validated = $request->validate($rules);
@@ -166,6 +173,13 @@ class ClientController extends Controller
             'pan_no' => 'nullable|string|max:15',
             'password' => 'nullable|string|min:6',
             'serial_no' => 'nullable|integer',
+            // Financial / billing fields
+            'billing_rate' => 'nullable|numeric|min:0',
+            'salary_cost' => 'nullable|numeric|min:0',
+            'esi_rate' => 'nullable|numeric|min:0|max:100',
+            'pf_rate' => 'nullable|numeric|min:0|max:100',
+            'licensing_cost' => 'nullable|numeric|min:0',
+            'administrative_overhead' => 'nullable|numeric|min:0',
         ];
 
         $validated = $request->validate($rules);
