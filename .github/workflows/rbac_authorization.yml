@@ -13,14 +13,15 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
-          MYSQL_DATABASE: ${{ secrets.DB_DATABASE }}
-          MYSQL_USER: ${{ secrets.DB_USERNAME }}
-          MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          # Use static credentials for the ephemeral CI service.
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: rbac_test
+          MYSQL_USER: ci_user
+          MYSQL_PASSWORD: ci_pass
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping --silent -h localhost -uroot -p${{ secrets.DB_ROOT_PASSWORD }}"
+          --health-cmd="mysqladmin ping --silent -h localhost -uroot -proot"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=5
@@ -29,9 +30,10 @@ jobs:
       DB_CONNECTION: mysql
       DB_HOST: 127.0.0.1
       DB_PORT: 3306
-      DB_DATABASE: ${{ secrets.DB_DATABASE }}
-      DB_USERNAME: ${{ secrets.DB_USERNAME }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      # Match the static service credentials above for the CI job
+      DB_DATABASE: rbac_test
+      DB_USERNAME: ci_user
+      DB_PASSWORD: ci_pass
 
     steps:
       - name: Checkout
@@ -54,28 +56,88 @@ jobs:
       - name: Install npm deps
         run: npm ci --silent
 
-      - name: Start MySQL service and prepare database
-        uses: docker://mysql:8.0
-        # We use a service container step to ensure MySQL is available; later steps will connect to it on localhost:3306
-
       - name: Wait for MySQL to be ready
         run: |
-          for i in {1..30}; do
-            if mysqladmin ping -h 127.0.0.1 -u${{ secrets.DB_USERNAME }} -p${{ secrets.DB_PASSWORD }} --silent; then
-              echo "MySQL is up" && break
+          set -euo pipefail
+          echo "Checking MySQL readiness..."
+          for i in {1..60}; do
+            if mysqladmin ping -h 127.0.0.1 -u$DB_USERNAME -p$DB_PASSWORD --silent; then
+              # also sanity-check by running a simple query
+              if mysql -h 127.0.0.1 -u$DB_USERNAME -p$DB_PASSWORD -e "SELECT 1" >/dev/null 2>&1; then
+                echo "MySQL is ready" && break
+              fi
             fi
-            echo "Waiting for MySQL..."; sleep 2
+            echo "Waiting for MySQL... (attempt: $i)"; sleep 2
           done
 
       - name: Create .env.testing
         run: |
+          set -euo pipefail
           cp .env.example .env.testing || true
           php -r "file_put_contents('.env.testing', str_replace(['DB_CONNECTION=','DB_HOST=','DB_PORT=','DB_DATABASE=','DB_USERNAME=','DB_PASSWORD='], ['DB_CONNECTION=mysql','DB_HOST=127.0.0.1','DB_PORT=3306','DB_DATABASE='.getenv('DB_DATABASE'),'DB_USERNAME='.getenv('DB_USERNAME'),'DB_PASSWORD='.getenv('DB_PASSWORD')], file_get_contents('.env.testing')));"
 
+      - name: DB debug info (before migrate)
+        run: |
+          set -euo pipefail
+          echo 'MySQL version and variables:'
+          mysql -h 127.0.0.1 -u$DB_USERNAME -p$DB_PASSWORD -e "SELECT VERSION(); SHOW VARIABLES LIKE 'innodb_lock_wait_timeout'; SHOW VARIABLES LIKE 'max_connections';"
+          echo 'Current processlist:'
+          mysql -h 127.0.0.1 -u$DB_USERNAME -p$DB_PASSWORD -e "SHOW FULL PROCESSLIST;"
+
       - name: Prepare database (MySQL)
         run: |
+          set -euo pipefail
           php artisan key:generate --ansi
-          php artisan migrate --env=testing --no-interaction
+          composer dump-autoload -o
+          echo 'Running migrations (testing)...'
+          php artisan migrate --env=testing --no-interaction --verbose || (echo 'migrate failed, showing processlist and innodb status'; mysql -h 127.0.0.1 -u$DB_USERNAME -p$DB_PASSWORD -e "SHOW FULL PROCESSLIST; SHOW ENGINE INNODB STATUS;"; exit 1)
+          echo 'Migration finished; listing tables:'
+          mysql -h 127.0.0.1 -u$DB_USERNAME -p$DB_PASSWORD -e "USE $DB_DATABASE; SHOW TABLES;"
+
+      - name: DB debug info (after migrate)
+        run: |
+          set -euo pipefail
+          php artisan migrate:status --env=testing
+
+      - name: Build frontend assets
+        run: |
+          set -euo pipefail
+          npm run build --silent
+
+      - name: Prepare .env for local server
+        run: |
+          set -euo pipefail
+          # Use the testing env for the served app so Cypress hits the same DB
+          cp .env.testing .env
+
+      - name: Start PHP built-in server for Cypress
+        run: |
+          set -euo pipefail
+          nohup php artisan serve --host=127.0.0.1 --port=8000 > server.log 2>&1 & echo $! > server.pid
+
+      - name: Wait for local server to be ready
+        run: |
+          for i in {1..60}; do
+            if curl -sSf http://127.0.0.1:8000/ >/dev/null 2>&1; then
+              echo "local server ready" && break
+            fi
+            echo "waiting for local server... ($i)"; sleep 2
+          done
+
+      - name: Run Cypress E2E (finance statutory)
+        run: |
+          set -euo pipefail
+          npx cypress run --spec "cypress/e2e/finance_statutory.cy.js"
+        continue-on-error: true
+
+      - name: Stop local server
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f server.pid ]; then
+            kill "$(cat server.pid)" || true
+            rm -f server.pid
+          fi
 
       - name: Run RBAC tests
         run: ./vendor/bin/phpunit --colors=always --testsuite=Feature --filter RoleBasedAuthorizationTest

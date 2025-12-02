@@ -26,4 +26,13 @@ Route::middleware([
     Route::get('/', function () {
         return 'This is your multi-tenant application. The id of the current tenant is '.tenant('id');
     });
+
+    // Client management routes
+    Route::resource('clients', \App\Http\Controllers\ClientController::class);
+    
+    // Additional client-related routes
+    Route::prefix('clients')->name('clients.')->group(function () {
+        Route::get('{client}/contacts', [\App\Http\Controllers\ClientController::class, 'contacts'])->name('contacts');
+        Route::get('{client}/taxes', [\App\Http\Controllers\ClientController::class, 'taxes'])->name('taxes');
+    });
 });

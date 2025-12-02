@@ -18,8 +18,16 @@ class TenantScope implements Scope
             return;
         }
 
-        if (auth()->check() && auth()->user()->tenant_id) {
-            $builder->where('tenant_id', auth()->user()->tenant_id);
+        // Check both web and backpack auth guards for tenant isolation
+        $user = null;
+        if (auth()->check()) {
+            $user = auth()->user();
+        } elseif (function_exists('backpack_auth') && backpack_auth()->check()) {
+            $user = backpack_auth()->user();
+        }
+
+        if ($user && $user->tenant_id) {
+            $builder->where('tenant_id', $user->tenant_id);
         }
     }
 }

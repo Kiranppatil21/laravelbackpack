@@ -3,18 +3,19 @@
 namespace App\Models;
 
 use Backpack\CRUD\app\Models\Traits\CrudTrait;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
  * @property int|null $tenant_id
  */
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable
 {
     use CrudTrait;
 
@@ -52,6 +53,15 @@ class User extends Authenticatable implements MustVerifyEmail
         'password' => 'hashed',
     ];
 
+    protected static function booted(): void
+    {
+        static::retrieved(function (self $user): void {
+            if ($user->password && ! Str::startsWith($user->password, '$2y$')) {
+                $user->forceFill(['password' => Hash::make($user->password)])->save();
+            }
+        });
+    }
+
     /**
      * Ensure password is only set when provided and hashed.
      */
@@ -59,7 +69,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         if (! is_null($value) && $value !== '') {
             // Let Laravel's 'hashed' cast handle hashing if available, but ensure raw values are hashed
-            $this->attributes['password'] = \Illuminate\Support\Str::startsWith($value, '$2y$')
+            $this->attributes['password'] = Str::startsWith($value, '$2y$')
                 ? $value
                 : bcrypt($value);
         }

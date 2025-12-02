@@ -1,0 +1,35 @@
+# Database optimization configuration for production
+# MySQL Configuration optimizations
+
+[mysqld]
+# InnoDB Configuration
+innodb_buffer_pool_size = 1G
+innodb_log_file_size = 256M
+innodb_log_buffer_size = 32M
+innodb_flush_log_at_trx_commit = 2
+innodb_flush_method = O_DIRECT
+
+# Query Cache (MySQL 5.7)
+query_cache_type = 1
+query_cache_size = 128M
+query_cache_limit = 2M
+
+# Connection Settings
+max_connections = 200
+max_connect_errors = 1000
+table_open_cache = 2000
+table_definition_cache = 1400
+
+# Binary Logging
+log-bin = mysql-bin
+binlog_format = ROW
+expire_logs_days = 7
+
+# Slow Query Log
+slow_query_log = 1
+slow_query_log_file = /var/log/mysql/mysql-slow.log
+long_query_time = 1
+
+# Security
+secure_file_priv = /var/lib/mysql-files
+local_infile = 0

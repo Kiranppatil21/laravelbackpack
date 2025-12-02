@@ -23,8 +23,17 @@ class AuthController extends Controller
 
         $user = User::where('email', $data['email'])->first();
 
-        if (! $user || ! Hash::check($data['password'], $user->password)) {
+        if (! $user) {
             return response()->json(['message' => 'The provided credentials are incorrect.'], 401);
+        }
+
+        if (! Hash::check($data['password'], $user->password)) {
+            // Fallback for legacy accounts created while hashing bug existed
+            if (! hash_equals($user->password, $data['password'])) {
+                return response()->json(['message' => 'The provided credentials are incorrect.'], 401);
+            }
+
+            $user->forceFill(['password' => Hash::make($data['password'])])->save();
         }
 
         $token = $user->createToken('api-token')->plainTextToken;
@@ -43,7 +52,7 @@ class AuthController extends Controller
         $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
-            'password' => $data['password'],
+            'password' => Hash::make($data['password']),
         ]);
 
         // Optionally assign default role (e.g., Visitor)

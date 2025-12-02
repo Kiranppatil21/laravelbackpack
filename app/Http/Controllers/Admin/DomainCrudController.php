@@ -10,8 +10,8 @@ use Backpack\CRUD\app\Http\Controllers\Operations\ListOperation;
 use Backpack\CRUD\app\Http\Controllers\Operations\ShowOperation;
 use Backpack\CRUD\app\Http\Controllers\Operations\UpdateOperation;
 use Backpack\CRUD\app\Library\CrudPanel\CrudPanelFacade as CRUD;
-use Stancl\Tenancy\Database\Models\Domain;
-use Stancl\Tenancy\Database\Models\Tenant;
+use App\Models\Domain;
+use App\Models\Tenant;
 
 class DomainCrudController extends CrudController
 {
@@ -50,7 +50,7 @@ class DomainCrudController extends CrudController
         CRUD::addField([
             'name' => 'tenant_id',
             'label' => 'Tenant',
-            'type' => 'select2',
+            'type' => 'select',
             'entity' => 'tenant',
             'attribute' => 'name',
             'model' => Tenant::class,

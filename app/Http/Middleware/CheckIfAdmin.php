@@ -27,8 +27,12 @@ class CheckIfAdmin
      */
     private function checkIfUserIsAdmin($user)
     {
+        // CRITICAL SECURITY: This should properly validate admin access
+        // Currently allows ANY authenticated user admin access
         // return ($user->is_admin == 1);
-        return true;
+
+        // FIXED: Check for Super Admin role or admin privileges
+        return $user && ($user->hasRole('Super Admin') || $user->is_admin ?? false);
     }
 
     /**
