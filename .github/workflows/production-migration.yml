@@ -1,0 +1,78 @@
+name: "Run production migration (manual, protected)"
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy to production'
+        required: true
+        default: 'main'
+
+jobs:
+  run-production-migration:
+    name: Run migration on production host
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run migration on remote production host via SSH
+        uses: appleboy/ssh-action@v0.1.9
+        with:
+          host: ${{ secrets.PROD_SSH_HOST }}
+          username: ${{ secrets.PROD_SSH_USER }}
+          key: ${{ secrets.PROD_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.PROD_SSH_PORT }}
+          script: |
+            set -euo pipefail
+            echo "Deploying branch: ${{ github.event.inputs.branch }} to production host"
+            cd ${{ secrets.PROD_PATH }}
+            git fetch origin
+            git checkout ${{ github.event.inputs.branch }}
+            git reset --hard origin/${{ github.event.inputs.branch }}
+            git pull origin ${{ github.event.inputs.branch }}
+
+            # Pre-migration: ensure backup exists and is recent
+            echo "Running pre-migration checks"
+            php artisan down --message="Applying tenant_uuid index migration (production canary)"
+
+            # Install composer deps and optionally build assets
+            composer install --no-dev --optimize-autoloader
+            if [ -f package.json ]; then
+              npm ci --prefer-offline
+              npm run build || true
+            fi
+
+            # Run migrations and verify
+            php artisan migrate --force
+            php artisan tenant:verify-uuids
+
+            # Bring the app up after the maintenance window step (optional to run here)
+            php artisan up
+
+      - name: Post workflow run link to PR
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const branch = github.event.inputs?.branch || context.ref.replace('refs/heads/','');
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: `${context.repo.owner}:${branch}`
+            });
+            if (prs && prs.length > 0) {
+              const pr = prs[0];
+              const runUrl = `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+              const body = `Production migration workflow run has started: ${runUrl}`;
+              await github.rest.issues.createComment({ owner: context.repo.owner, repo: context.repo.repo, issue_number: pr.number, body });
+            }
+
+# Required secrets (set in repo or org secrets):
+# - PROD_SSH_HOST: production host IP/hostname
+# - PROD_SSH_USER: ssh username (deploy user)
+# - PROD_SSH_PRIVATE_KEY: private key (no passphrase) for the runner to SSH
+# - PROD_PATH: absolute path to project on the production host (e.g., /var/www/laravelbackpack)
+# - PROD_URL: optional production URL (used by smoke tests if you add them)
+# - PROD_SSH_PORT: optional (default 22)

@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation Debug Tool</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            padding: 2rem;
+            background: #f5f5f5;
+        }
+        .debug-box {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+        h1 { color: #1f2937; margin-top: 0; }
+        h2 { color: #4b5563; font-size: 1.2rem; }
+        code {
+            background: #f3f4f6;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        pre {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 1rem;
+            border-radius: 6px;
+            overflow-x: auto;
+        }
+        .btn {
+            background: #0ea5e9;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.5rem 0.5rem 0.5rem 0;
+        }
+        .btn:hover {
+            background: #0284c7;
+        }
+        .status {
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            margin: 0.5rem 0;
+        }
+        .status.good { background: #d1fae5; color: #065f46; }
+        .status.bad { background: #fee2e2; color: #991b1b; }
+        .status.warning { background: #fef3c7; color: #92400e; }
+    </style>
+</head>
+<body>
+    <div class="debug-box">
+        <h1>🔍 Navigation Debug Tool</h1>
+        <p>Use this page to diagnose dropdown menu issues.</p>
+    </div>
+
+    <div class="debug-box">
+        <h2>Quick Tests</h2>
+        <button class="btn" onclick="testDropdownsHidden()">1. Check Dropdowns Hidden</button>
+        <button class="btn" onclick="testHoverWorks()">2. Test Hover Mechanism</button>
+        <button class="btn" onclick="checkCSSLoaded()">3. Check CSS Loaded</button>
+        <button class="btn" onclick="inspectStructure()">4. Inspect HTML Structure</button>
+        <div id="results"></div>
+    </div>
+
+    <div class="debug-box">
+        <h2>Browser Console Commands</h2>
+        <p>Open DevTools (F12) and paste these commands:</p>
+        
+        <h3>Check if dropdowns are hidden:</h3>
+        <pre>document.querySelectorAll('.nav-dropdown-items').forEach(el => {
+  console.log('Display:', window.getComputedStyle(el).display);
+  console.log('Visibility:', window.getComputedStyle(el).visibility);
+  console.log('Position:', window.getComputedStyle(el).position);
+});</pre>
+
+        <h3>Force show a dropdown:</h3>
+        <pre>document.querySelector('.nav-dropdown-items').style.cssText = 
+  'display: block !important; visibility: visible !important; opacity: 1 !important;';</pre>
+
+        <h3>Check parent containers:</h3>
+        <pre>document.querySelectorAll('.navbar, .container-xl, header').forEach(el => {
+  console.log(el.className, 'overflow:', window.getComputedStyle(el).overflow);
+});</pre>
+
+        <h3>Find conflicting styles:</h3>
+        <pre>const dropdown = document.querySelector('.nav-dropdown-items');
+const styles = window.getComputedStyle(dropdown);
+console.log({
+  display: styles.display,
+  visibility: styles.visibility,
+  position: styles.position,
+  top: styles.top,
+  left: styles.left,
+  zIndex: styles.zIndex
+});</pre>
+    </div>
+
+    <div class="debug-box">
+        <h2>Common Issues & Fixes</h2>
+        
+        <h3>Issue: Dropdowns still visible</h3>
+        <div class="status bad">
+            <strong>Cause:</strong> CSS not loaded or overridden
+        </div>
+        <p><strong>Fix:</strong></p>
+        <ol>
+            <li>Hard refresh: <code>Ctrl+Shift+R</code> (Windows) or <code>Cmd+Shift+R</code> (Mac)</li>
+            <li>Clear browser cache completely</li>
+            <li>Check Network tab in DevTools - verify CSS file loads</li>
+            <li>Check for CSS errors in Console tab</li>
+        </ol>
+
+        <h3>Issue: Dropdowns don't appear on hover</h3>
+        <div class="status warning">
+            <strong>Cause:</strong> z-index or positioning issue
+        </div>
+        <p><strong>Fix:</strong></p>
+        <ol>
+            <li>Inspect parent element - should have <code>position: relative</code></li>
+            <li>Check dropdown <code>z-index: 9999</code></li>
+            <li>Verify <code>pointer-events: auto</code> on hover</li>
+        </ol>
+
+        <h3>Issue: Dropdowns cut off by parent container</h3>
+        <div class="status warning">
+            <strong>Cause:</strong> Parent has <code>overflow: hidden</code>
+        </div>
+        <p><strong>Fix:</strong></p>
+        <ol>
+            <li>Add to CSS: <code>.navbar, .container-xl { overflow: visible !important; }</code></li>
+            <li>Check all parent containers up to <code>&lt;body&gt;</code></li>
+        </ol>
+    </div>
+
+    <div class="debug-box">
+        <h2>Expected CSS Values</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f3f4f6;">
+                    <th style="padding: 0.75rem; text-align: left;">Property</th>
+                    <th style="padding: 0.75rem; text-align: left;">Default State</th>
+                    <th style="padding: 0.75rem; text-align: left;">Hover State</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="border-top: 1px solid #e5e7eb;">
+                    <td style="padding: 0.75rem;"><code>display</code></td>
+                    <td style="padding: 0.75rem;">none</td>
+                    <td style="padding: 0.75rem;">block</td>
+                </tr>
+                <tr style="border-top: 1px solid #e5e7eb;">
+                    <td style="padding: 0.75rem;"><code>visibility</code></td>
+                    <td style="padding: 0.75rem;">hidden</td>
+                    <td style="padding: 0.75rem;">visible</td>
+                </tr>
+                <tr style="border-top: 1px solid #e5e7eb;">
+                    <td style="padding: 0.75rem;"><code>position</code></td>
+                    <td style="padding: 0.75rem;">absolute</td>
+                    <td style="padding: 0.75rem;">absolute</td>
+                </tr>
+                <tr style="border-top: 1px solid #e5e7eb;">
+                    <td style="padding: 0.75rem;"><code>opacity</code></td>
+                    <td style="padding: 0.75rem;">0</td>
+                    <td style="padding: 0.75rem;">1</td>
+                </tr>
+                <tr style="border-top: 1px solid #e5e7eb;">
+                    <td style="padding: 0.75rem;"><code>z-index</code></td>
+                    <td style="padding: 0.75rem;">9999</td>
+                    <td style="padding: 0.75rem;">9999</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function testDropdownsHidden() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h3>Test Results:</h3>';
+            
+            window.open('http://127.0.0.1:8000/admin', '_blank');
+            
+            results.innerHTML += `
+                <div class="status warning">
+                    <strong>Admin panel opened in new tab.</strong><br>
+                    Open DevTools (F12) and run:<br>
+                    <code>document.querySelectorAll('.nav-dropdown-items').length</code><br>
+                    Should return number > 0
+                </div>
+            `;
+        }
+
+        function testHoverWorks() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h3>Hover Test Instructions:</h3>';
+            results.innerHTML += `
+                <div class="status good">
+                    1. Go to admin panel<br>
+                    2. Hover over "User Management" or any menu with ▾<br>
+                    3. Dropdown should appear below<br>
+                    4. If nothing happens, check Console for errors
+                </div>
+            `;
+        }
+
+        function checkCSSLoaded() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h3>CSS Check:</h3>';
+            results.innerHTML += `
+                <div class="status warning">
+                    Run in Console:<br>
+                    <code>document.styleSheets.length</code><br>
+                    Should be > 0<br><br>
+                    Then inspect specific rule:<br>
+                    <code>Array.from(document.styleSheets).find(s => s.href && s.href.includes('app.css'))</code>
+                </div>
+            `;
+        }
+
+        function inspectStructure() {
+            const results = document.getElementById('results');
+            results.innerHTML = '<h3>Structure Inspection:</h3>';
+            results.innerHTML += `
+                <div class="status good">
+                    Run in Console:<br>
+                    <code>document.querySelector('#desktop-nav').innerHTML</code><br>
+                    Should show nested &lt;ul class="nav-dropdown-items"&gt; elements
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

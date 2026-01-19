@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Visitor Management System - Frontend Testing</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen py-12">
+        <div class="max-w-4xl mx-auto px-6">
+            <!-- Header -->
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold text-gray-900 mb-4">
+                    🚀 Enhanced Visitor Management System
+                </h1>
+                <p class="text-xl text-gray-600">Frontend Testing Interface</p>
+            </div>
+
+            <!-- Status Check -->
+            <div class="bg-white rounded-lg shadow p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-4">📡 System Status</h2>
+                <div id="status" class="space-y-2">
+                    <div class="flex items-center">
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full mr-3"></span>
+                        <span>Checking API connection...</span>
+                    </div>
+                </div>
+                <button onclick="checkStatus()" 
+                        class="mt-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                    Refresh Status
+                </button>
+            </div>
+
+            <!-- Interface Options -->
+            <div class="grid md:grid-cols-2 gap-8 mb-8">
+                <!-- Login Interface -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold mb-3">🔑 Authentication</h3>
+                    <p class="text-gray-600 mb-4">Get an authentication token for testing protected endpoints.</p>
+                    
+                    <div class="space-y-2 text-sm mb-4">
+                        <div><strong>Test Credentials:</strong></div>
+                        <div>📧 Email: admin@test.com</div>
+                        <div>🔒 Password: password</div>
+                    </div>
+                    
+                    <a href="login.html" 
+                       class="inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+                        Get Auth Token →
+                    </a>
+                </div>
+
+                <!-- Test Dashboard -->
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h3 class="text-lg font-semibold mb-3">📊 Interactive Dashboard</h3>
+                    <p class="text-gray-600 mb-4">Full-featured web interface to test all visitor management features.</p>
+                    
+                    <div class="space-y-1 text-sm mb-4">
+                        <div>✅ Mobile App Configuration</div>
+                        <div>✅ Visitor Management</div>
+                        <div>✅ QR Code Generation</div>
+                        <div>✅ IoT Device Integration</div>
+                        <div>✅ Analytics & Reporting</div>
+                    </div>
+                    
+                    <a href="visitor-test-dashboard.html" 
+                       class="inline-block bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700">
+                        Open Dashboard →
+                    </a>
+                </div>
+            </div>
+
+            <!-- API Documentation -->
+            <div class="bg-white rounded-lg shadow p-6 mb-8">
+                <h3 class="text-lg font-semibold mb-4">📚 API Endpoints Quick Reference</h3>
+                
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <h4 class="font-medium text-green-600 mb-2">Public Endpoints (No Auth Required)</h4>
+                        <div class="space-y-1 text-sm font-mono">
+                            <div>GET /api/mobile/config</div>
+                            <div>GET /api/mobile/invitations</div>
+                            <div>POST /api/mobile/generate-qr</div>
+                            <div>POST /api/mobile/scan-qr</div>
+                            <div>GET /api/mobile/visitor-status</div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-medium text-red-600 mb-2">Protected Endpoints (Auth Required)</h4>
+                        <div class="space-y-1 text-sm font-mono">
+                            <div>GET /api/visitors</div>
+                            <div>POST /api/visitors</div>
+                            <div>GET /api/devices</div>
+                            <div>POST /api/devices</div>
+                            <div>GET /api/visitor-analytics/dashboard</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Testing -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-semibold mb-4">🧪 Manual Testing Commands</h3>
+                
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="font-medium mb-2">Test Mobile Config (No Auth)</h4>
+                        <code class="block bg-gray-100 p-2 rounded text-sm">
+                            curl http://127.0.0.1:8000/api/mobile/config
+                        </code>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-medium mb-2">Login to Get Token</h4>
+                        <code class="block bg-gray-100 p-2 rounded text-sm">
+                            curl -X POST http://127.0.0.1:8000/api/login \<br>
+                            &nbsp;&nbsp;-H "Content-Type: application/json" \<br>
+                            &nbsp;&nbsp;-d '{"email":"admin@test.com","password":"password"}'
+                        </code>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-medium mb-2">Test Protected Endpoint (Replace TOKEN)</h4>
+                        <code class="block bg-gray-100 p-2 rounded text-sm">
+                            curl -H "Authorization: Bearer TOKEN" \<br>
+                            &nbsp;&nbsp;http://127.0.0.1:8000/api/visitors
+                        </code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="text-center mt-12 text-gray-500">
+                <p>Enhanced Visitor Management System - Frontend Testing Interface</p>
+                <p class="text-sm mt-1">Server should be running on: <strong>http://127.0.0.1:8000</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function checkStatus() {
+            const statusDiv = document.getElementById('status');
+            
+            // Reset status
+            statusDiv.innerHTML = `
+                <div class="flex items-center">
+                    <span class="w-3 h-3 bg-yellow-400 rounded-full mr-3"></span>
+                    <span>Checking API connection...</span>
+                </div>
+            `;
+
+            try {
+                // Test server connection
+                const response = await fetch('http://127.0.0.1:8000/api/mobile/config');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    statusDiv.innerHTML = `
+                        <div class="flex items-center">
+                            <span class="w-3 h-3 bg-green-400 rounded-full mr-3"></span>
+                            <span>✅ API Server is running (Status: ${response.status})</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="w-3 h-3 bg-green-400 rounded-full mr-3"></span>
+                            <span>✅ Mobile Config API working</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="w-3 h-3 bg-green-400 rounded-full mr-3"></span>
+                            <span>✅ App Version: ${data.config?.app_version || 'Unknown'}</span>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="w-3 h-3 bg-blue-400 rounded-full mr-3"></span>
+                            <span>📊 Available Features: ${Object.keys(data.config?.features || {}).length}</span>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `
+                    <div class="flex items-center">
+                        <span class="w-3 h-3 bg-red-400 rounded-full mr-3"></span>
+                        <span>❌ Connection failed: ${error.message}</span>
+                    </div>
+                    <div class="flex items-center mt-2">
+                        <span class="w-3 h-3 bg-yellow-400 rounded-full mr-3"></span>
+                        <span>💡 Make sure Laravel server is running: <code>php artisan serve</code></span>
+                    </div>
+                `;
+            }
+        }
+
+        // Check status on page load
+        checkStatus();
+    </script>
+</body>
+</html>

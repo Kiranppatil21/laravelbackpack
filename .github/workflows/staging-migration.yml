@@ -1,0 +1,101 @@
+name: "Run staging migration (manual)"
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy to staging'
+        required: true
+        default: 'chore/tenant-uuid-indexes'
+
+jobs:
+  run-migration:
+    name: Run migration on staging host
+    runs-on: ubuntu-latest
+    # Use a protected environment named `staging` so organizations can require manual approval
+    environment: staging
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run migration on remote staging host via SSH
+        uses: appleboy/ssh-action@v0.1.9
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.STAGING_SSH_PORT }}
+          script: |
+            set -e
+            echo "Deploying branch: ${{ github.event.inputs.branch }} to staging host"
+            cd ${{ secrets.STAGING_PATH }}
+            # Ensure working tree is clean and checkout the branch
+            git fetch origin
+            git checkout ${{ github.event.inputs.branch }}
+            git reset --hard origin/${{ github.event.inputs.branch }}
+            git pull origin ${{ github.event.inputs.branch }}
+
+            # Install composer dependencies and run migrations
+            composer install --no-dev --optimize-autoloader
+
+            # Optional: build assets if your staging host requires it
+            if [ -f package.json ]; then
+              npm ci --prefer-offline
+              npm run build || true
+            fi
+
+            php artisan migrate --force
+            php artisan tenant:verify-uuids
+
+      - name: Post workflow run link to PR
+        uses: actions/github-script@v6
+        env:
+          BRANCH: ${{ github.event.inputs.branch }}
+        with:
+          script: |
+            const branch = process.env.BRANCH || github.event.inputs.branch;
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: `${context.repo.owner}:${branch}`
+            });
+
+            if (!prs || prs.length === 0) {
+              core.info(`No open PR found for branch ${branch}. Skipping comment.`);
+            } else {
+              const pr = prs[0];
+              const runUrl = `${process.env.GITHUB_SERVER_URL}/${context.repo.owner}/${context.repo.repo}/actions/runs/${process.env.GITHUB_RUN_ID}`;
+              const body = `Staging migration workflow run has started: ${runUrl}`;
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body
+              });
+            }
+
+      - name: Prepare Node.js (for Cypress)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install JS dependencies
+        run: |
+          npm ci --prefer-offline
+
+      - name: Run Cypress smoke tests against staging
+        uses: cypress-io/github-action@v5
+        with:
+          start: false
+        env:
+          CYPRESS_BASE_URL: ${{ secrets.STAGING_URL }}
+          # Optional: set CYPRESS_RECORD_KEY if you want to record runs
+          # CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+
+# Required secrets (set these in the repository or organization settings before running):
+# - STAGING_SSH_HOST: staging host IP or hostname
+# - STAGING_SSH_USER: ssh username
+# - STAGING_SSH_PRIVATE_KEY: private key for SSH (no passphrase) or use SSH agent action
+# - STAGING_PATH: full path to the project on the staging host (exported as an env var on the host or set as a secret)
+# - STAGING_SSH_PORT (optional): SSH port (default 22)

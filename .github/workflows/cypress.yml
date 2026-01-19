@@ -1,0 +1,93 @@
+name: Cypress E2E
+
+on:
+  push:
+    branches: [ main, phase2 ]
+  pull_request:
+    branches: [ main, phase2 ]
+
+jobs:
+  cypress-run:
+    runs-on: ubuntu-latest
+    env:
+      VISITOR_API_KEY: ${{ secrets.VISITOR_API_KEY }}
+      VISITOR_HMAC_SECRET: ${{ secrets.VISITOR_HMAC_SECRET }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install PHP dependencies
+        run: |
+          composer install --no-progress --no-suggest --prefer-dist
+
+      - name: Install Node dependencies
+        run: |
+          npm ci
+
+      - name: Copy env and generate key
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Run migrations
+        run: |
+          php artisan migrate --force
+
+      - name: Start queue worker (background)
+        run: |
+          export QUEUE_CONNECTION=database
+          php artisan queue:work --sleep=1 --tries=1 > /tmp/queue.log 2>&1 &
+
+      - name: Seed test roles
+        run: |
+          php artisan db:seed --class=TestRolesSeeder --force
+
+      - name: Require visitor secret (API key or HMAC)
+        run: |
+          if [ -z "${{ secrets.VISITOR_API_KEY }}" ] && [ -z "${{ secrets.VISITOR_HMAC_SECRET }}" ]; then echo "Missing both VISITOR_API_KEY and VISITOR_HMAC_SECRET secrets"; exit 1; fi
+
+      - name: Build assets
+        run: |
+          npm run build
+
+      - name: Start Laravel server
+        run: |
+          php artisan serve --port=8000 > server.log 2>&1 &
+          # wait for server to boot
+          for i in {1..30}; do
+            curl -sSf http://127.0.0.1:8000 && break || sleep 1
+          done
+
+      - name: Run Cypress tests
+      - name: Run Cypress tests
+        run: |
+          # Run all specs; pass VISITOR_API_KEY into Cypress env so specs can use it
+          if [ -n "$CYPRESS_RECORD_KEY" ]; then
+            npx cypress run --record --parallel --env VISITOR_API_KEY=${{ secrets.VISITOR_API_KEY }}
+          else
+            npx cypress run --env VISITOR_API_KEY=${{ secrets.VISITOR_API_KEY }}
+          fi
+        env:
+          CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
+          QUEUE_CONNECTION: sync
+
+      - name: Upload Cypress artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-artifacts
+          path: |
+            cypress/videos
+            cypress/screenshots
+            cypress/results || true

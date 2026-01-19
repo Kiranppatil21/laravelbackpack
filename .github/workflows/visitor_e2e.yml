@@ -1,0 +1,125 @@
+name: Visitor CI E2E
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  visitor-e2e:
+    runs-on: ubuntu-latest
+    env:
+      VISITOR_API_KEY: ${{ secrets.VISITOR_API_KEY }}
+      VISITOR_HMAC_SECRET: ${{ secrets.VISITOR_HMAC_SECRET }}
+      VISITOR_HMAC_TTL: '300'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, bcmath, xml, gd, pdo, pdo_sqlite, curl
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install PHP dependencies
+        run: |
+          composer install --no-progress --no-suggest --prefer-dist
+
+      - name: Install Node dependencies & build
+        run: |
+          npm ci
+          npm run build --if-present
+
+      - name: Copy env and generate key
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php -r "file_exists('database/database.sqlite') || mkdir('database') && touch('database/database.sqlite');"
+
+      - name: Run migrations
+        run: |
+          php artisan migrate --force
+
+      - name: Seed roles and visitors
+        run: |
+          php artisan db:seed --class=TestRolesSeeder --force
+          php artisan db:seed --class=VisitorSeeder --force
+
+      - name: Start queue worker (background)
+        run: |
+          export QUEUE_CONNECTION=database
+          php artisan queue:work --sleep=1 --tries=1 > /tmp/queue.log 2>&1 &
+
+      - name: Require visitor secret (API key or HMAC)
+        run: |
+          if [ -z "${{ secrets.VISITOR_API_KEY }}" ] && [ -z "${{ secrets.VISITOR_HMAC_SECRET }}" ]; then echo "Missing both VISITOR_API_KEY and VISITOR_HMAC_SECRET secrets"; exit 1; fi
+
+      - name: Start Laravel server
+        run: |
+          # Configure app to use log mail driver (writes to storage/logs/laravel.log)
+          php -r "file_put_contents('.env', preg_replace('/MAIL_MAILER=.*/', 'MAIL_MAILER=log', file_get_contents('.env')) );"
+          php artisan config:clear || true
+          php artisan migrate --force
+          php artisan serve --port=8000 > server.log 2>&1 &
+          for i in {1..30}; do
+            curl -sSf http://127.0.0.1:8000 && break || sleep 1
+          done
+
+      - name: Create CI host user and emit its id
+        id: create_host
+        run: |
+          echo "Creating host user..."
+          # create or fetch a host user and print id
+          php artisan tinker --execute "\$u=App\\Models\\User::firstOrCreate(['email'=>'ci_host@example.test'],['name'=>'CI Host','password'=>bcrypt('password')]); echo \$u->id;" > host_id.txt
+          echo "host_id=$(tail -n1 host_id.txt)" >> $GITHUB_OUTPUT
+
+      - name: Post signed check-in (HMAC or API key)
+        run: |
+          set -e
+          HOST_ID=${{ steps.create_host.outputs.host_id }}
+          PAYLOAD='{"name":"CI Device","email":"ci-device@example.test","host_id":'"$HOST_ID"'}'
+
+          if [ -n "${VISITOR_API_KEY}" ]; then
+            echo "Using API key"
+            curl -s -X POST -H "Content-Type: application/json" -H "X-VISITOR-API-KEY: ${VISITOR_API_KEY}" -d "$PAYLOAD" http://127.0.0.1:8000/api/visitors/checkin -o /tmp/checkin_resp.txt -w "%{http_code}"
+          else
+            echo "Using HMAC"
+            TS=$(date +%s)
+            SIG=$(printf "%s|%s" "$TS" "$PAYLOAD" | openssl dgst -sha256 -hmac "$VISITOR_HMAC_SECRET" | awk '{print $NF}')
+            curl -s -X POST -H "Content-Type: application/json" -H "X-VISITOR-TIMESTAMP: $TS" -H "X-VISITOR-SIGNATURE: $SIG" -d "$PAYLOAD" http://127.0.0.1:8000/api/visitors/checkin -o /tmp/checkin_resp.txt -w "%{http_code}"
+          fi
+
+          echo
+          cat /tmp/checkin_resp.txt
+
+      - name: Wait for notification processing (poll laravel.log)
+        run: |
+          echo "Waiting for notification to appear in storage/logs/laravel.log..."
+          for i in {1..30}; do
+            if grep -q "ci_host@example.test" storage/logs/laravel.log; then
+              echo "Found mail log"
+              tail -n 200 storage/logs/laravel.log || true
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Mail log not found:"; tail -n 200 storage/logs/laravel.log || true
+          exit 1
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visitor-e2e-artifacts
+          path: |
+            server.log
+            /tmp/queue.log
+            storage/logs/laravel.log

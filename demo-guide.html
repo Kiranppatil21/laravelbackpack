@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureServe SaaS Demo Guide</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: white;
+        }
+        
+        .cover-page {
+            page-break-after: always;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: -2cm;
+            padding: 2cm;
+        }
+        
+        .cover-page h1 {
+            font-size: 3.5em;
+            margin-bottom: 0.5em;
+            font-weight: 700;
+        }
+        
+        .cover-page h2 {
+            font-size: 1.8em;
+            margin-bottom: 2em;
+            font-weight: 300;
+        }
+        
+        .cover-page .subtitle {
+            font-size: 1.2em;
+            margin-bottom: 1em;
+            opacity: 0.9;
+        }
+        
+        .cover-page .date {
+            font-size: 1em;
+            opacity: 0.8;
+            margin-top: 2em;
+        }
+        
+        .toc {
+            page-break-after: always;
+        }
+        
+        .toc h2 {
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 0.5em;
+            margin-bottom: 1em;
+        }
+        
+        .toc ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .toc li {
+            margin-bottom: 0.8em;
+            padding: 0.5em;
+            border-left: 4px solid #667eea;
+            background: #f8f9fa;
+        }
+        
+        .toc .phase {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .toc .time {
+            float: right;
+            color: #666;
+            font-style: italic;
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 2.5em;
+            margin: 2em 0 1em 0;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 0.5em;
+        }
+        
+        h2 {
+            color: #764ba2;
+            font-size: 2em;
+            margin: 1.5em 0 0.8em 0;
+            page-break-after: avoid;
+        }
+        
+        h3 {
+            color: #667eea;
+            font-size: 1.5em;
+            margin: 1.2em 0 0.6em 0;
+            page-break-after: avoid;
+        }
+        
+        h4 {
+            color: #764ba2;
+            font-size: 1.2em;
+            margin: 1em 0 0.5em 0;
+            page-break-after: avoid;
+        }
+        
+        .phase {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            color: white;
+            padding: 1em;
+            margin: 2em 0 1em 0;
+            border-radius: 8px;
+            page-break-inside: avoid;
+        }
+        
+        .phase h2 {
+            color: white;
+            margin: 0;
+            font-size: 1.8em;
+        }
+        
+        .phase .duration {
+            float: right;
+            background: rgba(255,255,255,0.2);
+            padding: 0.3em 0.8em;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+        
+        .highlight-box {
+            background: #f8f9fa;
+            border-left: 5px solid #667eea;
+            padding: 1em;
+            margin: 1em 0;
+            border-radius: 0 8px 8px 0;
+            page-break-inside: avoid;
+        }
+        
+        .highlight-box.important {
+            border-left-color: #dc3545;
+            background: #fff5f5;
+        }
+        
+        .highlight-box.tip {
+            border-left-color: #28a745;
+            background: #f8fff9;
+        }
+        
+        .navigate {
+            background: #667eea;
+            color: white;
+            padding: 0.8em;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 1em 0;
+        }
+        
+        .demo-action {
+            background: #764ba2;
+            color: white;
+            padding: 0.5em 1em;
+            border-radius: 5px;
+            display: inline-block;
+            margin: 0.5em 0;
+            font-weight: bold;
+        }
+        
+        .checklist {
+            background: #e8f5e8;
+            border: 1px solid #28a745;
+            border-radius: 8px;
+            padding: 1em;
+            margin: 1em 0;
+        }
+        
+        .checklist h4 {
+            color: #28a745;
+            margin-bottom: 0.5em;
+        }
+        
+        .checklist ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .checklist li:before {
+            content: "✅ ";
+            color: #28a745;
+            margin-right: 0.5em;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1em;
+            margin: 1em 0;
+        }
+        
+        .feature-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 1em;
+            background: #f9f9f9;
+        }
+        
+        .feature-card h5 {
+            color: #667eea;
+            margin-bottom: 0.5em;
+        }
+        
+        .pricing-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1em 0;
+        }
+        
+        .pricing-table th,
+        .pricing-table td {
+            border: 1px solid #ddd;
+            padding: 0.8em;
+            text-align: center;
+        }
+        
+        .pricing-table th {
+            background: #667eea;
+            color: white;
+        }
+        
+        .pricing-table .popular {
+            background: #fff3cd;
+        }
+        
+        blockquote {
+            border-left: 4px solid #667eea;
+            margin: 1em 0;
+            padding: 1em;
+            background: #f8f9fa;
+            font-style: italic;
+            page-break-inside: avoid;
+        }
+        
+        code {
+            background: #f8f9fa;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #e83e8c;
+        }
+        
+        pre {
+            background: #f8f9fa;
+            padding: 1em;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+            overflow-x: auto;
+            margin: 1em 0;
+        }
+        
+        ul, ol {
+            margin: 1em 0;
+            padding-left: 2em;
+        }
+        
+        li {
+            margin: 0.5em 0;
+        }
+        
+        .page-break {
+            page-break-before: always;
+        }
+        
+        .no-break {
+            page-break-inside: avoid;
+        }
+        
+        .footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 0.9em;
+            color: #666;
+            padding: 1em 0;
+            border-top: 1px solid #eee;
+        }
+        
+        @media print {
+            .footer {
+                position: static;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Cover Page -->
+<div class="cover-page">
+    <h1>SecureServe</h1>
+    <h2>SaaS Demo Guide</h2>
+    <div class="subtitle">Complete Client Presentation Script</div>
+    <div class="subtitle">Multi-Tenant Security Management Platform</div>
+    <div class="date">November 18, 2025</div>
+</div>
+
+<!-- Table of Contents -->
+<div class="toc">
+    <h2>Table of Contents</h2>
+    <ul>
+        <li><span class="phase">Demo Preparation Checklist</span> <span class="time">Before Demo</span></li>
+        <li><span class="phase">Phase 1: Market Context & Problem Statement</span> <span class="time">5 minutes</span></li>
+        <li><span class="phase">Phase 2: Landing Page & Value Proposition</span> <span class="time">3 minutes</span></li>
+        <li><span class="phase">Phase 3: Interactive Demo Pages</span> <span class="time">7 minutes</span></li>
+        <li><span class="phase">Phase 4: Registration Process</span> <span class="time">5 minutes</span></li>
+        <li><span class="phase">Phase 5: Admin Dashboard Deep Dive</span> <span class="time">15 minutes</span></li>
+        <li><span class="phase">Phase 6: Visitor Management System</span> <span class="time">8 minutes</span></li>
+        <li><span class="phase">Phase 7: Financial Management & Billing</span> <span class="time">7 minutes</span></li>
+        <li><span class="phase">Phase 8: Multi-Tenancy & Scalability</span> <span class="time">5 minutes</span></li>
+        <li><span class="phase">Phase 9: API & Integration Capabilities</span> <span class="time">3 minutes</span></li>
+        <li><span class="phase">Phase 10: Pricing & Business Model</span> <span class="time">5 minutes</span></li>
+        <li><span class="phase">Phase 11: Competitive Advantages</span> <span class="time">3 minutes</span></li>
+        <li><span class="phase">Phase 12: Implementation & Next Steps</span> <span class="time">3 minutes</span></li>
+        <li><span class="phase">Demo Closing & Call to Action</span> <span class="time">Final Close</span></li>
+    </ul>
+</div>
+
+<!-- Main Content -->
+<div class="page-break"></div>
+
+<h1>SecureServe SaaS Demo Guide</h1>
+
+<div class="checklist">
+    <h4>Demo Preparation Checklist</h4>
+    <ul>
+        <li>Laravel server running at <code>http://127.0.0.1:8000</code></li>
+        <li>Prepare demo data (employees, clients, visitors)</li>
+        <li>Have multiple browser tabs ready</li>
+        <li>Ensure stable internet connection</li>
+        <li>Test all features beforehand</li>
+    </ul>
+</div>
+
+<div class="phase">
+    <span class="duration">5 minutes</span>
+    <h2>Phase 1: Market Context & Problem Statement</h2>
+</div>
+
+<div class="highlight-box important">
+    <h4>Opening Statement</h4>
+    <p><strong>"Let me show you how security agencies struggle today and how our SaaS solution solves it."</strong></p>
+</div>
+
+<h3>What to Say:</h3>
+<blockquote>
+    "Mr. [Client Name], security agencies in India face three major challenges:
+    <ol>
+        <li>Manual attendance tracking leading to payroll disputes</li>
+        <li>Complex labor law compliance (EPF, ESIC, Professional Tax)</li>
+        <li>Poor visitor management creating security vulnerabilities</li>
+    </ol>
+    Today I'll show you SecureServe - a complete SaaS platform that solves all these problems with automated processes."
+</blockquote>
+
+<div class="phase">
+    <span class="duration">3 minutes</span>
+    <h2>Phase 2: Landing Page & Value Proposition</h2>
+</div>
+
+<div class="navigate">Navigate to: http://127.0.0.1:8000</div>
+
+<h3>Key Points to Highlight:</h3>
+
+<div class="features-grid">
+    <div class="feature-card">
+        <h5>Professional Branding</h5>
+        <p>"Notice the clean, professional design - this builds trust with enterprise clients."</p>
+    </div>
+    <div class="feature-card">
+        <h5>Clear Value Proposition</h5>
+        <p>Point to hero section: "Complete Security Management Platform"</p>
+    </div>
+    <div class="feature-card">
+        <h5>Pricing Strategy</h5>
+        <p>Click "Pricing": "Three tiers: ₹2,999 to ₹12,999/month"</p>
+    </div>
+    <div class="feature-card">
+        <h5>Trust Indicators</h5>
+        <p>Point to "14-Day Free Trial" and "No credit card required"</p>
+    </div>
+</div>
+
+<div class="demo-action">Demo Action: Click "Watch Demo" button</div>
+
+<div class="phase">
+    <span class="duration">7 minutes</span>
+    <h2>Phase 3: Interactive Demo Pages</h2>
+</div>
+
+<div class="navigate">Navigate to: http://127.0.0.1:8000/demo</div>
+
+<h3>Dashboard Overview Demo</h3>
+<pre>Click on "Dashboard Overview" tab</pre>
+
+<h4>What to Explain:</h4>
+<blockquote>
+    "This is what agency owners see when they log in:
+    <ul>
+        <li>Real-time guard status across all locations</li>
+        <li>Today's attendance summary with GPS verification</li>
+        <li>Revenue analytics and billing overview</li>
+        <li>Instant notifications for no-shows or security alerts"</li>
+    </ul>
+</blockquote>
+
+<h3>Employee Management Demo</h3>
+<pre>Click on "Employee Management" tab</pre>
+
+<h4>Key Features to Demo:</h4>
+<blockquote>
+    "For each security guard, we store:
+    <ul>
+        <li>Complete profile with photo and documents</li>
+        <li>Identity proofs (Aadhaar, PAN, Police Verification)</li>
+        <li>Family member details for emergencies</li>
+        <li>Uniform allocation and return tracking</li>
+        <li>Training certifications and renewals"</li>
+    </ul>
+</blockquote>
+
+<h3>Smart Attendance Demo</h3>
+<pre>Click on "Smart Attendance" tab</pre>
+
+<h4>Revolutionary Features:</h4>
+<blockquote>
+    "This solves the biggest pain point:
+    <ul>
+        <li>GPS location verification - guards can only check-in from assigned locations</li>
+        <li>QR code scanning prevents buddy punching</li>
+        <li>Real-time status updates for supervisors</li>
+        <li>Automatic overtime calculations</li>
+        <li>Mobile app integration"</li>
+    </ul>
+</blockquote>
+
+<h3>Payroll Compliance Demo</h3>
+<pre>Click on "Indian Payroll System" tab</pre>
+
+<h4>Compliance Automation:</h4>
+<blockquote>
+    "We handle all Indian labor law compliance automatically:
+    <ul>
+        <li>EPF calculations (12% employee + employer contributions)</li>
+        <li>ESIC calculations (0.75% + 3.25%)</li>
+        <li>Professional tax by state (varies from ₹150-₹2,500)</li>
+        <li>TDS calculations and certificates</li>
+        <li>PDF payslips with bank transfer files"</li>
+    </ul>
+</blockquote>
+
+<div class="page-break"></div>
+
+<div class="phase">
+    <span class="duration">5 minutes</span>
+    <h2>Phase 4: Registration Process</h2>
+</div>
+
+<div class="navigate">Navigate to: http://127.0.0.1:8000/register</div>
+
+<h3>Self-Service Onboarding</h3>
+<pre>Walk through the registration form (don't submit)</pre>
+
+<h4>What to Demonstrate:</h4>
+<ol>
+    <li><strong>Company Information:</strong> "Captures all business details"</li>
+    <li><strong>Admin User Creation:</strong> "Creates the first user account"</li>
+    <li><strong>Plan Selection:</strong> "Customer chooses their tier based on guard count"</li>
+    <li><strong>Billing Options:</strong> "Monthly or yearly with automatic discounts"</li>
+</ol>
+
+<div class="highlight-box tip">
+    <h4>Key SaaS Features to Highlight:</h4>
+    <blockquote>
+        "Notice this is completely self-service:
+        <ul>
+            <li>No sales calls required</li>
+            <li>Instant account creation</li>
+            <li>14-day free trial</li>
+            <li>Automatic tenant provisioning"</li>
+        </ul>
+    </blockquote>
+</div>
+
+<div class="phase">
+    <span class="duration">15 minutes</span>
+    <h2>Phase 5: Admin Dashboard Deep Dive</h2>
+</div>
+
+<div class="navigate">Navigate to: http://127.0.0.1:8000/admin</div>
+
+<h3>Login with Demo Credentials</h3>
+<pre>
+Email: super_admin@example.test
+Password: password
+</pre>
+
+<h3>5A: Employee Management System (5 minutes)</h3>
+
+<h4>Navigate to: Admin → Employees</h4>
+
+<div class="demo-action">Create New Employee Demo:</div>
+<pre>
+Click "Add Employee" button
+Show the comprehensive form
+</pre>
+
+<h4>What to Highlight:</h4>
+<ol>
+    <li><strong>Personal Information:</strong> "Complete KYC data collection"</li>
+    <li><strong>Identity Proofs Section:</strong>
+        <ul>
+            <li>Click "Add More" button</li>
+            <li>Show dynamic form: "Multiple Aadhaar, PAN, Police Verification"</li>
+        </ul>
+    </li>
+    <li><strong>Family Members:</strong>
+        <ul>
+            <li>Add family member dynamically</li>
+            <li>Show emergency contact system</li>
+        </ul>
+    </li>
+    <li><strong>Uniform Allocation:</strong>
+        <ul>
+            <li>Track uniform distribution</li>
+            <li>Return management</li>
+        </ul>
+    </li>
+</ol>
+
+<div class="highlight-box">
+    <h4>Business Value:</h4>
+    <p>"This replaces manual paper files and ensures compliance with labor regulations."</p>
+</div>
+
+<h3>5B: Client Relationship Management (4 minutes)</h3>
+
+<h4>Navigate to: Admin → Clients</h4>
+
+<h4>Client Management Features:</h4>
+<ol>
+    <li><strong>Client Profiles:</strong> "Store all client company details"</li>
+    <li><strong>Multiple Locations:</strong> "One client, multiple service locations"</li>
+    <li><strong>Contract Management:</strong> "Digital contracts with renewal alerts"</li>
+    <li><strong>Service Billing:</strong> "Automated invoicing based on guard hours"</li>
+</ol>
+
+<h3>5C: Attendance Tracking (3 minutes)</h3>
+
+<h4>Navigate to: Admin → Attendance</h4>
+
+<h4>Real-time Monitoring:</h4>
+<ol>
+    <li><strong>Live Dashboard:</strong> "See who's checked in/out right now"</li>
+    <li><strong>GPS Verification:</strong> "Guards can only check-in from assigned locations"</li>
+    <li><strong>Exception Management:</strong> "Handle late arrivals, early departures"</li>
+    <li><strong>Overtime Calculations:</strong> "Automatic overtime tracking and approval"</li>
+</ol>
+
+<h3>5D: Payroll Processing (3 minutes)</h3>
+
+<h4>Navigate to: Admin → Payroll</h4>
+
+<h4>Automated Payroll:</h4>
+<ol>
+    <li><strong>Salary Calculations:</strong> "Automatic basic + allowances + deductions"</li>
+    <li><strong>Statutory Compliance:</strong> "EPF, ESIC, Professional Tax, TDS automatically calculated"</li>
+    <li><strong>Payslip Generation:</strong> "Professional PDF payslips with company branding"</li>
+    <li><strong>Bank Integration:</strong> "NEFT/RTGS file generation for bulk payments"</li>
+</ol>
+
+<div class="page-break"></div>
+
+<div class="phase">
+    <span class="duration">8 minutes</span>
+    <h2>Phase 6: Visitor Management System</h2>
+</div>
+
+<div class="navigate">Navigate to: Admin → Visitors</div>
+
+<h3>Visitor Registration Process</h3>
+<h4>Explain the Complete Flow:</h4>
+
+<div class="features-grid">
+    <div class="feature-card">
+        <h5>1. Pre-Registration</h5>
+        <p>"Visitors can register online before arriving"</p>
+        <p>"Host approval workflow prevents unauthorized entries"</p>
+    </div>
+    <div class="feature-card">
+        <h5>2. Check-in Process</h5>
+        <p>"QR code scanning at reception"</p>
+        <p>"Automatic photo capture"</p>
+        <p>"ID verification against government databases"</p>
+    </div>
+    <div class="feature-card">
+        <h5>3. Security Screening</h5>
+        <p>"Background verification"</p>
+        <p>"Watchlist checking"</p>
+        <p>"Host notifications"</p>
+    </div>
+    <div class="feature-card">
+        <h5>4. Real-time Tracking</h5>
+        <p>"Live visitor count"</p>
+        <p>"Location tracking within premises"</p>
+        <p>"Automatic check-out reminders"</p>
+    </div>
+</div>
+
+<div class="highlight-box">
+    <h4>Business Impact:</h4>
+    <p>"This transforms visitor security from manual logbooks to enterprise-grade tracking."</p>
+</div>
+
+<div class="phase">
+    <span class="duration">7 minutes</span>
+    <h2>Phase 7: Financial Management & Billing</h2>
+</div>
+
+<h3>7A: Invoice Management</h3>
+<h4>Navigate to: Admin → Invoices</h4>
+
+<h4>Automated Billing System:</h4>
+<ol>
+    <li><strong>Service Billing:</strong> "Automatic invoice generation based on guard hours"</li>
+    <li><strong>GST Compliance:</strong> "18% GST calculation and filing"</li>
+    <li><strong>Payment Tracking:</strong> "Outstanding amounts and payment reconciliation"</li>
+    <li><strong>Client Statements:</strong> "Monthly statements with detailed breakdowns"</li>
+</ol>
+
+<h3>7B: Revenue Analytics</h3>
+<h4>Show Financial Dashboard:</h4>
+
+<ol>
+    <li><strong>Monthly Revenue:</strong> "Track recurring revenue growth"</li>
+    <li><strong>Client Profitability:</strong> "Margin analysis by client"</li>
+    <li><strong>Payment Status:</strong> "Outstanding receivables tracking"</li>
+    <li><strong>Statutory Reports:</strong> "EPF, ESIC, and tax filing reports"</li>
+</ol>
+
+<div class="phase">
+    <span class="duration">5 minutes</span>
+    <h2>Phase 8: Multi-Tenancy & Scalability</h2>
+</div>
+
+<h3>Tenant Management (Super Admin View)</h3>
+<h4>Navigate to: Admin → Tenants</h4>
+
+<h4>What to Demonstrate:</h4>
+<ol>
+    <li><strong>Tenant Isolation:</strong> "Each customer gets their own secure database"</li>
+    <li><strong>Subscription Management:</strong> "Track billing status, plan changes, renewals"</li>
+    <li><strong>Usage Monitoring:</strong> "Employee limits, feature usage tracking"</li>
+    <li><strong>Support Tools:</strong> "Admin can access any tenant for support"</li>
+</ol>
+
+<div class="highlight-box tip">
+    <h4>SaaS Value Proposition:</h4>
+    <blockquote>
+        "This is true multi-tenancy:
+        <ul>
+            <li>Each client's data is completely isolated</li>
+            <li>Automatic scaling as they grow</li>
+            <li>Centralized billing and management</li>
+            <li>Zero maintenance for customers"</li>
+        </ul>
+    </blockquote>
+</div>
+
+<div class="phase">
+    <span class="duration">3 minutes</span>
+    <h2>Phase 9: API & Integration Capabilities</h2>
+</div>
+
+<div class="navigate">Navigate to: http://127.0.0.1:8000/documentation</div>
+
+<h3>API Documentation Demo</h3>
+<h4>Show Enterprise Integration:</h4>
+
+<ol>
+    <li><strong>REST API:</strong> "Complete API for third-party integrations"</li>
+    <li><strong>Authentication:</strong> "Secure token-based authentication"</li>
+    <li><strong>Webhooks:</strong> "Real-time notifications for attendance, visitor events"</li>
+    <li><strong>Mobile SDK:</strong> "Ready for mobile app development"</li>
+</ol>
+
+<div class="highlight-box">
+    <h4>Business Applications:</h4>
+    <blockquote>
+        "Enterprise clients can integrate with:
+        <ul>
+            <li>HRMS systems</li>
+            <li>Accounting software</li>
+            <li>Access control systems</li>
+            <li>CCTV and security systems"</li>
+        </ul>
+    </blockquote>
+</div>
+
+<div class="page-break"></div>
+
+<div class="phase">
+    <span class="duration">5 minutes</span>
+    <h2>Phase 10: Pricing & Business Model</h2>
+</div>
+
+<div class="navigate">Navigate to: http://127.0.0.1:8000/pricing</div>
+
+<h3>Revenue Model Explanation</h3>
+
+<table class="pricing-table">
+    <thead>
+        <tr>
+            <th>Plan</th>
+            <th>Monthly Price</th>
+            <th>Guard Limit</th>
+            <th>Key Features</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Starter</strong></td>
+            <td>₹2,999</td>
+            <td>Up to 25</td>
+            <td>Basic attendance, Mobile app</td>
+        </tr>
+        <tr class="popular">
+            <td><strong>Professional</strong></td>
+            <td>₹5,999</td>
+            <td>Up to 100</td>
+            <td>GPS tracking, Full payroll, API access</td>
+        </tr>
+        <tr>
+            <td><strong>Enterprise</strong></td>
+            <td>₹12,999</td>
+            <td>Unlimited</td>
+            <td>Custom features, White-label, Priority support</td>
+        </tr>
+    </tbody>
+</table>
+
+<h4>Additional Revenue Streams:</h4>
+<ol>
+    <li><strong>Add-ons:</strong> "Advanced Analytics (₹999), Premium Integrations (₹1,499)"</li>
+    <li><strong>Custom Development:</strong> "White-label solutions, custom workflows"</li>
+    <li><strong>Training & Support:</strong> "Implementation services, dedicated support"</li>
+</ol>
+
+<div class="highlight-box">
+    <h4>Market Size Calculation:</h4>
+    <blockquote>
+        "In India:
+        <ul>
+            <li>50,000+ security agencies</li>
+            <li>Average 50 guards per agency</li>
+            <li>Target: ₹5,999/month × 1,000 agencies = ₹6 crore ARR potential"</li>
+        </ul>
+    </blockquote>
+</div>
+
+<div class="phase">
+    <span class="duration">3 minutes</span>
+    <h2>Phase 11: Competitive Advantages</h2>
+</div>
+
+<h3>Why SecureServe Wins</h3>
+
+<h4>Technical Differentiators:</h4>
+<ol>
+    <li><strong>True Multi-Tenancy:</strong> "Competitors use shared databases - security risk"</li>
+    <li><strong>Indian Compliance:</strong> "Built specifically for Indian labor laws"</li>
+    <li><strong>GPS + QR Attendance:</strong> "Prevents all forms of attendance fraud"</li>
+    <li><strong>Complete Solution:</strong> "Competitors offer only HR or only visitor management"</li>
+</ol>
+
+<h4>Business Differentiators:</h4>
+<ol>
+    <li><strong>Self-Service Onboarding:</strong> "No sales team needed - pure SaaS model"</li>
+    <li><strong>14-Day Free Trial:</strong> "Let the product sell itself"</li>
+    <li><strong>Transparent Pricing:</strong> "No hidden costs or custom quotes"</li>
+    <li><strong>Scalable Architecture:</strong> "Handles 1 client or 10,000 clients"</li>
+</ol>
+
+<div class="phase">
+    <span class="duration">3 minutes</span>
+    <h2>Phase 12: Implementation & Next Steps</h2>
+</div>
+
+<h3>Customer Onboarding Process</h3>
+
+<div class="features-grid">
+    <div class="feature-card">
+        <h5>Week 1: Setup</h5>
+        <ul>
+            <li>Account creation and configuration</li>
+            <li>Employee data import</li>
+            <li>Client setup and locations</li>
+        </ul>
+    </div>
+    <div class="feature-card">
+        <h5>Week 2: Training</h5>
+        <ul>
+            <li>Admin user training</li>
+            <li>Guard mobile app training</li>
+            <li>Reception/visitor management training</li>
+        </ul>
+    </div>
+    <div class="feature-card">
+        <h5>Week 3: Go-Live</h5>
+        <ul>
+            <li>Pilot location launch</li>
+            <li>Full rollout</li>
+            <li>Performance monitoring</li>
+        </ul>
+    </div>
+    <div class="feature-card">
+        <h5>Ongoing Support</h5>
+        <ul>
+            <li>24/7 technical support</li>
+            <li>Regular feature updates</li>
+            <li>Compliance updates</li>
+        </ul>
+    </div>
+</div>
+
+<div class="page-break"></div>
+
+<div class="phase">
+    <span class="duration">Final Close</span>
+    <h2>Demo Closing & Call to Action</h2>
+</div>
+
+<h3>Summary of Value Delivered:</h3>
+
+<div class="highlight-box important">
+    <blockquote>
+        "Mr. [Client Name], SecureServe delivers three core benefits:
+        <ol>
+            <li><strong>Operational Efficiency:</strong> GPS attendance and automated payroll saves 15-20 hours/week</li>
+            <li><strong>Compliance Assurance:</strong> Automatic EPF, ESIC, GST compliance prevents penalties</li>
+            <li><strong>Revenue Growth:</strong> Professional presentation and billing increases client retention by 30%</li>
+        </ol>
+        <br>
+        The ROI is clear: at ₹5,999/month, you save more in reduced administrative costs than the subscription fee."
+    </blockquote>
+</div>
+
+<h3>Next Steps:</h3>
+<ol>
+    <li><strong>Free Trial:</strong> "Start with 14-day free trial - no credit card required"</li>
+    <li><strong>Data Migration:</strong> "We'll help import your existing employee and client data"</li>
+    <li><strong>Training Session:</strong> "2-hour training session for your admin team"</li>
+    <li><strong>Go-Live Support:</strong> "Dedicated support during first month"</li>
+</ol>
+
+<h3>Final Questions to Ask:</h3>
+<ol>
+    <li>"What's your current monthly administrative cost for payroll and attendance?"</li>
+    <li>"How many compliance issues have you faced in the last year?"</li>
+    <li>"What's your biggest challenge with current visitor management?"</li>
+    <li>"When would you like to start the free trial?"</li>
+</ol>
+
+<h1>Demo Tips for Success</h1>
+
+<div class="checklist">
+    <h4>Before Starting:</h4>
+    <ul>
+        <li>Ask about their current challenges</li>
+        <li>Understand their business size</li>
+        <li>Identify decision makers present</li>
+        <li>Set expectations for demo duration</li>
+    </ul>
+</div>
+
+<div class="checklist">
+    <h4>During Demo:</h4>
+    <ul>
+        <li>Focus on pain points they mentioned</li>
+        <li>Use actual numbers from their business</li>
+        <li>Encourage questions throughout</li>
+        <li>Show, don't just tell</li>
+    </ul>
+</div>
+
+<div class="checklist">
+    <h4>After Demo:</h4>
+    <ul>
+        <li>Recap key benefits specific to their needs</li>
+        <li>Address any concerns raised</li>
+        <li>Provide clear next steps</li>
+        <li>Send follow-up materials</li>
+    </ul>
+</div>
+
+<div class="highlight-box tip">
+    <h4>Key Success Factor:</h4>
+    <p>This comprehensive demo script showcases your complete SaaS application from marketing website to deep functionality, emphasizing the business value and competitive advantages at every step. The key is to let the product demonstrate its own value while connecting features to real business problems your client faces.</p>
+</div>
+
+<div class="footer">
+    <p>SecureServe SaaS Demo Guide • November 2025 • Confidential</p>
+</div>
+
+</body>
+</html>

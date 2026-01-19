@@ -1,0 +1,42 @@
+# Prometheus monitoring configuration
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "rules/*.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+
+scrape_configs:
+  # Laravel Application Metrics
+  - job_name: 'laravel-app'
+    static_configs:
+      - targets: ['yourdomain.com:80']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # System Metrics
+  - job_name: 'node'
+    static_configs:
+      - targets: ['localhost:9100']
+
+  # MySQL Metrics (requires mysqld_exporter)
+  - job_name: 'mysql'
+    static_configs:
+      - targets: ['localhost:9104']
+
+  # Redis Metrics (requires redis_exporter)
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['localhost:9121']
+
+  # Nginx Metrics (requires nginx-prometheus-exporter)
+  - job_name: 'nginx'
+    static_configs:
+      - targets: ['localhost:9113']
